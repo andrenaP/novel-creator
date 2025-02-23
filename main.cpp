@@ -4,35 +4,93 @@
 
 #include <vector>
 #include <string>
+#include <cstdio>
 
-struct Shape {
-    Rectangle rect;
-    bool isCircle;
+struct Node {
+    std::string backgroundImage;
+    std::string characterImage;
+    Texture2D bgTexture = {0};
+    Texture2D charTexture = {0};
+    std::vector<std::string> textLines;
+    Vector2 position;
+    std::vector<int> connections;
 };
 
-struct Connection {
-    int startIndex;
-    int endIndex;
-};
+std::vector<Node> nodes;
+int selectedNodeIndex = -1;
+bool movingNode = false;
+Vector2 dragOffset = {0, 0};
+bool editingNode = false;
+char textBuffer[256] = "";
+bool editText = false;
+bool connectingNodes = false;
+int firstSelectedNode = -1;
 
+std::string OpenFileDialog() {
+    char filename[1024] = "";
+    FILE *f = popen("zenity --file-selection", "r");
+    if (f) {
+        fgets(filename, 1024, f);
+        pclose(f);
+        size_t len = strlen(filename);
+        if (len > 0 && filename[len - 1] == '\n') filename[len - 1] = '\0';
+    }
+    return std::string(filename);
+}
+
+void LoadNodeTextures(Node &node) {
+    if (!node.backgroundImage.empty()) {
+        node.bgTexture = LoadTexture(node.backgroundImage.c_str());
+    }
+    if (!node.characterImage.empty()) {
+        node.charTexture = LoadTexture(node.characterImage.c_str());
+    }
+}
+Vector2 cameraOffset = {0, 0};
 int main() {
-    InitWindow(800, 600, "Shape Editor");
-    SetTargetFPS(60);
-    
-    std::vector<Shape> shapes;
-    std::vector<Connection> connections;
-    Vector2 cameraOffset = {0, 0};
-    bool dragging = false;
     Vector2 dragStart = {0, 0};
-    bool movingShape = false;
-    int selectedShapeIndex = -1;
-    int shapeToConnectIndex = -1;
-    std::string connectionMessage = "Select first shape to connect";
+    bool dragging = false;
+    InitWindow(800, 600, "Novel Editor");
+    SetTargetFPS(60);
     
     while (!WindowShouldClose()) {
         Vector2 mousePos = GetMousePosition();
         
-        // Pan scene with right mouse drag
+        // Handle node movement
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            for (size_t i = 0; i < nodes.size(); i++) {
+                Rectangle nodeRect = {nodes[i].position.x+cameraOffset.x, nodes[i].position.y+cameraOffset.y, 200, 100};
+                if (CheckCollisionPointRec(mousePos, nodeRect)) {
+                    if (connectingNodes) {
+                        if (firstSelectedNode == -1) {
+                            firstSelectedNode = i;
+                        } else {
+                            nodes[firstSelectedNode].connections.push_back(i);
+                            connectingNodes = false;
+                            firstSelectedNode = -1;
+                        }
+                    } else {
+                        selectedNodeIndex = i;
+                        movingNode = true;
+                        editingNode = true;
+                        if (!nodes[i].textLines.empty()) {
+                            strcpy(textBuffer, nodes[i].textLines[0].c_str());
+                        } else {
+                            textBuffer[0] = '\0';
+                        }
+                        dragOffset = {mousePos.x - nodes[i].position.x, mousePos.y - nodes[i].position.y};
+                    }
+                    break;
+                }
+            }
+        }
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && movingNode && selectedNodeIndex != -1) {
+            nodes[selectedNodeIndex].position.x = mousePos.x - dragOffset.x;
+            nodes[selectedNodeIndex].position.y = mousePos.y - dragOffset.y;
+        }
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+            movingNode = false;
+        }
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
             dragging = true;
             dragStart = mousePos;
@@ -42,66 +100,70 @@ int main() {
             cameraOffset.y += (mousePos.y - dragStart.y);
             dragStart = mousePos;
         }
-        if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) dragging = false;
         
-        // Move shapes with left mouse button
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            for (size_t i = 0; i < shapes.size(); i++) {
-                Rectangle adjustedRect = {shapes[i].rect.x + cameraOffset.x, shapes[i].rect.y + cameraOffset.y, shapes[i].rect.width, shapes[i].rect.height};
-                if (CheckCollisionPointRec(mousePos, adjustedRect)) {
-                    selectedShapeIndex = i;
-                    movingShape = true;
-                    break;
-                }
-            }
-        }
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && movingShape && selectedShapeIndex != -1) {
-            shapes[selectedShapeIndex].rect.x = mousePos.x - cameraOffset.x - shapes[selectedShapeIndex].rect.width / 2;
-            shapes[selectedShapeIndex].rect.y = mousePos.y - cameraOffset.y - shapes[selectedShapeIndex].rect.height / 2;
-        }
-        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-            movingShape = false;
-        }
-        
-        // Add shapes via GUI buttons
-        if (GuiButton({10, 10, 100, 30}, "Add Square")) {
-            shapes.push_back({{400 - cameraOffset.x, 300 - cameraOffset.y, 50, 50}, false});
-        }
-        if (GuiButton({120, 10, 100, 30}, "Add Circle")) {
-            shapes.push_back({{400 - cameraOffset.x, 300 - cameraOffset.y, 50, 50}, true});
-        }
-        
-        // Connect shapes via GUI button
-        if (GuiButton({230, 10, 100, 30}, "Connect")) {
-            if (shapeToConnectIndex != -1 && selectedShapeIndex != -1 && shapeToConnectIndex != selectedShapeIndex) {
-                connections.push_back({shapeToConnectIndex, selectedShapeIndex});
-                shapeToConnectIndex = -1;
-                connectionMessage = "Connection created!";
-            } else {
-                shapeToConnectIndex = selectedShapeIndex;
-                connectionMessage = shapeToConnectIndex != -1 ? "Select second shape to connect" : "Select first shape to connect";
-            }
-        }
-        
-        // Draw scene
         BeginDrawing();
         ClearBackground(RAYWHITE);
         
-        for (auto &conn : connections) {
-            DrawLineV({shapes[conn.startIndex].rect.x + 25 + cameraOffset.x, shapes[conn.startIndex].rect.y + 25 + cameraOffset.y},
-                      {shapes[conn.endIndex].rect.x + 25 + cameraOffset.x, shapes[conn.endIndex].rect.y + 25 + cameraOffset.y}, BLACK);
-        }
-        
-        for (auto &shape : shapes) {
-            if (shape.isCircle) {
-                DrawCircleV({shape.rect.x + 25 + cameraOffset.x, shape.rect.y + 25 + cameraOffset.y}, 25, BLUE);
-            } else {
-                DrawRectangle(shape.rect.x + cameraOffset.x, shape.rect.y + cameraOffset.y, shape.rect.width, shape.rect.height, RED);
+        // Draw connections
+        for (auto& node : nodes) {
+            for (int connIndex : node.connections) {
+                // DrawLineV(node.position, nodes[connIndex].position+cameraOffset, BLACK);
+
+
+                DrawLineV({node.position.x + cameraOffset.x, node.position.y + 25 + cameraOffset.y},
+                    {nodes[connIndex].position.x + cameraOffset.x, nodes[connIndex].position.y + cameraOffset.y}, BLACK);
             }
         }
         
-        // Display connection status message
-        DrawText(connectionMessage.c_str(), 10, 50, 20, DARKGRAY);
+        // Draw nodes
+        for (auto& node : nodes) {
+            DrawRectangle(node.position.x+cameraOffset.x, node.position.y+cameraOffset.y, 200, 100, LIGHTGRAY);
+            DrawText("Node", node.position.x+cameraOffset.x + 10, node.position.y+cameraOffset.y + 10, 20, BLACK);
+            
+            if (node.bgTexture.id > 0) {
+                DrawTexturePro(node.bgTexture, {0, 0, (float)node.bgTexture.width, (float)node.bgTexture.height}, {node.position.x+cameraOffset.x, node.position.y+cameraOffset.y, 50, 50}, {0, 0}, 0, WHITE);
+            }
+            
+            if (node.charTexture.id > 0) {
+                DrawTexturePro(node.charTexture, {0, 0, (float)node.charTexture.width, (float)node.charTexture.height}, {node.position.x + 60 + cameraOffset.x, node.position.y + 20 + cameraOffset.y, 50, 50}, {0, 0}, 0, WHITE);
+            }
+        }
+        
+        // GUI Controls
+        if (GuiButton({10, 10, 150, 30}, "Add Node")) {
+            nodes.push_back({"", "", {0}, {0}, {}, {400, 300}, {}});
+        }
+        
+        if (GuiButton({10, 50, 150, 30}, "Connect Nodes")) {
+            connectingNodes = true;
+            firstSelectedNode = -1;
+        }
+        
+        if (editingNode && selectedNodeIndex != -1) {
+            DrawRectangle(600, 50, 180, 300, LIGHTGRAY);
+            DrawText("Edit Node", 610, 60, 20, BLACK);
+            GuiLabel({610, 90, 160, 20}, "Background Image:");
+            if (GuiButton({610, 110, 160, 30}, "Select File")) {
+                nodes[selectedNodeIndex].backgroundImage = OpenFileDialog();
+                LoadNodeTextures(nodes[selectedNodeIndex]);
+            }
+            GuiLabel({610, 140, 160, 20}, "Character Image:");
+            if (GuiButton({610, 160, 160, 30}, "Select File")) {
+                nodes[selectedNodeIndex].characterImage = OpenFileDialog();
+                LoadNodeTextures(nodes[selectedNodeIndex]);
+            }
+            GuiLabel({610, 190, 160, 20}, "Text:");
+            if (GuiTextBox({610, 210, 160, 20}, textBuffer, 256, editText)) {
+                editText = !editText;
+            }
+            if (GuiButton({610, 250, 160, 30}, "Save")) {
+                nodes[selectedNodeIndex].textLines.clear();
+                nodes[selectedNodeIndex].textLines.push_back(textBuffer);
+            }
+            if (GuiButton({610, 290, 160, 30}, "Close")) {
+                editingNode = false;
+            }
+        }
         
         EndDrawing();
     }
