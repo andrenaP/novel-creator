@@ -12,7 +12,9 @@
 #ifdef __linux__
     #include "raylib.h"
     #include "raygui.h"
+	#include "raymath.h"
 #else
     #include <raylib.h>
     #include <raygui.h>
+	#include <raymath.h>
 #endif
