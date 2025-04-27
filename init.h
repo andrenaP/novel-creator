@@ -7,3 +7,12 @@
 	#define OPEN(file_name, mode)   fopen(file_name, mode)
 	#define CLOSE(file)             fclose(file)
 #endif
+
+
+#ifdef __linux__
+    #include "raylib.h"
+    #include "raygui.h"
+#else
+    #include <raylib.h>
+    #include <raygui.h>
+#endif

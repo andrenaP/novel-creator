@@ -3,8 +3,7 @@
 
 #include "init.h"
 
-#include <raygui.h>
-#include <raylib.h>
+
 
 #include <vector>
 #include <string>
