@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
+
 project(NovelCreator)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -6,7 +7,6 @@ set(CMAKE_CXX_STANDARD 17)
 # Получаем путь к Raylib из переменной среды
 if(NOT DEFINED ENV{RAYLIB_PATH})
     # Билд для линукса
-    
 else()
     set(RAYLIB_PATH "$ENV{RAYLIB_PATH}")
 endif()
@@ -29,8 +29,11 @@ file(GLOB HEADERS "src/*.h")
 
 add_executable(editor ${SOURCES} ${HEADERS})
 
+# Линкуем библиотеки
+target_link_libraries(editor PRIVATE ${RAYLIB_LIB})
 
-target_link_libraries(editor PRIVATE
-    ${RAYLIB_LIB}
-    winmm      # Для timeBeginPeriod
-)
+# Только на Windows линкуем winmm
+if(WIN32)
+    target_link_libraries(editor PRIVATE winmm)
+endif()
+
