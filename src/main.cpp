@@ -3,9 +3,6 @@
 
 #include "init.h"
 
-#include <raygui.h>
-#include <raylib.h>
-
 #include <vector>
 #include <string>
 
@@ -146,6 +143,7 @@ public:
     {
         this->addNode(40, 100);
         this->addNode(200, 150);
+        this->addNode(360, 200);
         //this->addBinding();
     }
     ~Scene()
