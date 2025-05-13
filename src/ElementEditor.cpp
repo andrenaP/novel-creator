@@ -2,7 +2,6 @@
 // #include "raygui.h"
 #include "ElementEditor.hpp"
 #include "FileUtils.hpp"
-#include <algorithm>
 #include <fstream>
 
 ElementEditor::ElementEditor() {

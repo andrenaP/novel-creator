@@ -21,6 +21,11 @@ void SceneEditor::update() {
     updateSceneMode();
 }
 
+
+std::vector<Scene>& SceneEditor::getScenes(){
+    return scenes;
+}
+
 void SceneEditor::updateSceneMode() {
     if (currentSceneIndex == -1 && !isEditing) {
         strncpy(sceneNameBuffer, "New Scene", sizeof(sceneNameBuffer));

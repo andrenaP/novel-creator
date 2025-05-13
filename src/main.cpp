@@ -1,9 +1,9 @@
 #include "ElementEditor.hpp"
 #include "SceneEditor.hpp"
+#include "NodeManager.hpp"
 #include "raylib.h"
-#include <string>
 
-enum class Mode { ELEMENT, SCENE };
+enum class Mode { ELEMENT, SCENE, NODE };
 
 int main() {
     InitWindow(1000, 600, "Novel Scene Creator");
@@ -12,19 +12,30 @@ int main() {
     Mode currentMode = Mode::ELEMENT;
     ElementEditor elementEditor;
     SceneEditor sceneEditor(elementEditor.getElements(), elementEditor.getScenes());
+    NodeManager nodeManager(sceneEditor.getScenes());
 
     while (!WindowShouldClose()) {
         // Handle mode switching
         if (IsKeyPressed(KEY_TAB)) {
-            currentMode = (currentMode == Mode::ELEMENT) ? Mode::SCENE : Mode::ELEMENT;
-            TraceLog(LOG_INFO, "Switched to %s mode", currentMode == Mode::ELEMENT ? "Element" : "Scene");
+            if (currentMode == Mode::ELEMENT) {
+                currentMode = Mode::SCENE;
+                TraceLog(LOG_INFO, "Switched to Scene mode");
+            } else if (currentMode == Mode::SCENE) {
+                currentMode = Mode::NODE;
+                TraceLog(LOG_INFO, "Switched to Node mode");
+            } else {
+                currentMode = Mode::ELEMENT;
+                TraceLog(LOG_INFO, "Switched to Element mode");
+            }
         }
 
         // Update
         if (currentMode == Mode::ELEMENT) {
             elementEditor.update();
-        } else {
+        } else if (currentMode == Mode::SCENE) {
             sceneEditor.update();
+        } else {
+            nodeManager.update();
         }
 
         // Draw
@@ -32,10 +43,12 @@ int main() {
         ClearBackground(RAYWHITE);
         if (currentMode == Mode::ELEMENT) {
             elementEditor.draw();
-        } else {
+        } else if (currentMode == Mode::SCENE) {
             sceneEditor.draw();
+        } else {
+            nodeManager.draw();
         }
-        DrawText("Press TAB to switch between Element and Scene modes", 10, 560, 10, DARKGRAY);
+        DrawText("Press TAB to switch between Element, Scene, and Node modes", 10, 560, 10, DARKGRAY);
         EndDrawing();
     }
 

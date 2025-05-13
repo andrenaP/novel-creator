@@ -12,6 +12,7 @@ public:
     SceneEditor(std::vector<Element>& elements, std::vector<Scene>& scenes);
     void update();
     void draw();
+    std::vector<Scene>& getScenes();
 
 private:
     std::vector<Element>& elements; // Reference to shared elements
@@ -28,6 +29,7 @@ private:
     float sceneElementScrollOffset;
 
     void updateSceneMode();
+
     void clearBuffers();
     void drawSceneMode();
     void loadSceneToUI();

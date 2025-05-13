@@ -57,4 +57,16 @@ struct Scene {
     std::vector<SceneElement> elements;
 };
 
+struct NodeConnection {
+    size_t toNodeIndex; // Index of the connected node
+    std::string choiceText; // Text for the choice leading to the connected node
+};
+
+struct Node {
+    std::string name;
+    std::vector<size_t> sceneIndices; // Indices of scenes in the SceneEditor’s scene list
+    std::vector<NodeConnection> connections; // Connections to other nodes
+    Vector2 position; // For rendering in the node editor
+};
+
 #endif // TYPES_HPP
