@@ -58,15 +58,22 @@ struct Scene {
 };
 
 struct NodeConnection {
-    size_t toNodeIndex; // Index of the connected node
-    std::string choiceText; // Text for the choice leading to the connected node
+    size_t toNodeIndex;
+    std::string choiceText;
 };
+
+enum class DragType { SIMPLE, SNAPPING };
 
 struct Node {
     std::string name;
-    std::vector<size_t> sceneIndices; // Indices of scenes in the SceneEditor’s scene list
-    std::vector<NodeConnection> connections; // Connections to other nodes
-    Vector2 position; // For rendering in the node editor
+    int sceneIndex; // Single scene index (default -1 for none)
+    std::vector<NodeConnection> connections;
+    Vector2 position;
+    DragType dragType;
+    Color color; // Changed from NodeColor to Raylib Color
+
+    Node(const std::string& n = "Node", int s = -1, const std::vector<NodeConnection>& c = {}, Vector2 p = {0, 0}, DragType dt = DragType::SIMPLE, Color col = LIGHTGRAY)
+        : name(n), sceneIndex(s), connections(c), position(p), dragType(dt), color(col) {}
 };
 
 #endif // TYPES_HPP
