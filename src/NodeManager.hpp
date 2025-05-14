@@ -70,14 +70,19 @@ public:
 
     std::vector<Node>& getNodes() { return nodes; }
 
+    enum class ConnectionRenderMode {
+            SINGLE_POINT,
+            MULTI_POINT
+        };
+
 private:
     bool isMouseOverNode(size_t index);
     bool isMouseOverNodeInput(size_t index);
     bool isMouseOverNodeOutput(size_t index);
     bool isMouseOverAnyNode();
-
     Vector2 getNodeInputPos(size_t index);
-    Vector2 getNodeOutputPos(size_t index);
+    Vector2 getNodeInputPos(size_t index, size_t connectionIndex);
+    Vector2 getNodeOutputPos(size_t index, size_t connectionIndex);
 
     void drawEditUI();
 
@@ -100,6 +105,10 @@ private:
     char choiceTextBuffer[256] = "";
     bool editChoiceTextFlag;
     bool isEditingChoiceText;
+    ConnectionRenderMode connectionRenderMode;
+
+    size_t getIncomingConnectionCount(size_t nodeIndex);
+    size_t getIncomingConnectionIndex(size_t targetNodeIndex, size_t sourceNodeIndex, size_t sourceConnIndex);
 };
 
 #endif // NODE_MANAGER_HPP

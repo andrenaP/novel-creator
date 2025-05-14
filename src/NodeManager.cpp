@@ -15,7 +15,8 @@ NodeManager::NodeManager(std::vector<Scene>& scenes) :
     connDropdownEditMode(false),
     selectedConnection(-1),
     editChoiceTextFlag(false),
-    isEditingChoiceText(false) // New flag to track active editing
+    isEditingChoiceText(false),
+    connectionRenderMode(ConnectionRenderMode::SINGLE_POINT)
 {
     nodes.emplace_back(Node{"Start Node", -1, {}, {100, 100}, DragType::SIMPLE, LIGHTGRAY});
 }
@@ -25,7 +26,6 @@ void NodeManager::update()
     Vector2 mouse = GetMousePosition();
     Vector2 mouseDelta = GetMouseDelta();
 
-    // Handle dragging nodes
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
     {
         draggingNode = -1;
@@ -55,7 +55,6 @@ void NodeManager::update()
         }
     }
 
-    // Handle canvas dragging
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !isMouseOverAnyNode()) {
         draggingCanvas = true;
     }
@@ -88,7 +87,6 @@ void NodeManager::update()
         offset.y += mouseDelta.y;
     }
 
-    // Handle connection creation
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         for (size_t i = 0; i < nodes.size(); ++i)
@@ -102,7 +100,6 @@ void NodeManager::update()
         }
     }
 
-    // Handle node editing
     if (IsMouseButtonPressed(MOUSE_MIDDLE_BUTTON))
     {
         for (size_t i = 0; i < nodes.size(); ++i)
@@ -120,14 +117,12 @@ void NodeManager::update()
                 selectedConnection = nodes[i].connections.empty() ? -1 : 0;
                 editChoiceTextFlag = false;
                 isEditingChoiceText = false;
-                // Initialize choiceTextBuffer for the first connection (if any)
                 if (selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[i].connections.size())) {
                     strncpy(choiceTextBuffer, nodes[i].connections[selectedConnection].choiceText.c_str(), 256);
                 } else {
                     choiceTextBuffer[0] = '\0';
                 }
                 TraceLog(LOG_INFO, "Opened edit UI for node %zu: %s", i, nodes[i].name.c_str());
-                // Log connections for debugging
                 TraceLog(LOG_DEBUG, "Node %zu has %zu connections:", i, nodes[i].connections.size());
                 for (size_t j = 0; j < nodes[i].connections.size(); ++j) {
                     size_t toNodeIndex = nodes[i].connections[j].toNodeIndex;
@@ -139,13 +134,11 @@ void NodeManager::update()
         }
     }
 
-    // Add node with 'N' key
     if (IsKeyPressed(KEY_N))
     {
         addNode(mouse.x - offset.x, mouse.y - offset.y);
     }
 
-    // Delete node with 'DELETE' key when a node is selected
     if (IsKeyPressed(KEY_DELETE) && selectedNode != -1)
     {
         deleteNode(selectedNode);
@@ -164,8 +157,9 @@ void NodeManager::draw()
         {
             const auto& conn = nodes[i].connections[j];
             if (conn.toNodeIndex < nodes.size()) {
-                Vector2 start = getNodeOutputPos(i);
-                Vector2 end = getNodeInputPos(conn.toNodeIndex);
+                size_t inputSlotIndex = getIncomingConnectionIndex(conn.toNodeIndex, i, j);
+                Vector2 start = getNodeOutputPos(i, j);
+                Vector2 end = getNodeInputPos(conn.toNodeIndex, connectionRenderMode == ConnectionRenderMode::MULTI_POINT ? inputSlotIndex : 0);
                 DrawLineBezier(start, end, 2.0f, DARKGRAY);
                 DrawText(conn.choiceText.c_str(), (start.x + end.x) / 2, (start.y + end.y) / 2 - 10, 10, BLACK);
             } else {
@@ -183,14 +177,29 @@ void NodeManager::draw()
         DrawText(nodes[i].name.c_str(), pos.x + 10, pos.y + 5, 12, BLACK);
 
         // Draw input/output slots
-        DrawCircleV(getNodeInputPos(i), 6, BLUE);
-        DrawCircleV(getNodeOutputPos(i), 6, RED);
+        if (connectionRenderMode == ConnectionRenderMode::SINGLE_POINT) {
+            DrawCircleV(getNodeInputPos(i, 0), 6, BLUE);
+            DrawCircleV(getNodeOutputPos(i, 0), 6, RED);
+        } else {
+            // Draw output slots based on outgoing connections
+            size_t numOutConnections = nodes[i].connections.size();
+            size_t numOutSlots = numOutConnections > 0 ? numOutConnections : 1;
+            for (size_t j = 0; j < numOutSlots; ++j) {
+                DrawCircleV(getNodeOutputPos(i, j), 6, RED);
+            }
+            // Draw input slots based on incoming connections
+            size_t numInConnections = getIncomingConnectionCount(i);
+            size_t numInSlots = numInConnections > 0 ? numInConnections : 1;
+            for (size_t j = 0; j < numInSlots; ++j) {
+                DrawCircleV(getNodeInputPos(i, j), 6, BLUE);
+            }
+        }
     }
 
     // Draw connection in progress
     if (creatingConnection)
     {
-        Vector2 start = getNodeOutputPos(fromNode);
+        Vector2 start = getNodeOutputPos(fromNode, 0);
         Vector2 end = GetMousePosition();
         DrawLineBezier(start, end, 2.0f, RED);
     }
@@ -248,17 +257,41 @@ bool NodeManager::isMouseOverNode(size_t index)
 bool NodeManager::isMouseOverNodeInput(size_t index)
 {
     if (index >= nodes.size()) return false;
-    Vector2 inputPos = getNodeInputPos(index);
     Vector2 mouse = GetMousePosition();
-    return CheckCollisionPointCircle(mouse, inputPos, 6);
+    if (connectionRenderMode == ConnectionRenderMode::SINGLE_POINT) {
+        Vector2 inputPos = getNodeInputPos(index, 0);
+        return CheckCollisionPointCircle(mouse, inputPos, 6);
+    } else {
+        size_t numInConnections = getIncomingConnectionCount(index);
+        size_t numSlots = numInConnections > 0 ? numInConnections : 1;
+        for (size_t j = 0; j < numSlots; ++j) {
+            Vector2 inputPos = getNodeInputPos(index, j);
+            if (CheckCollisionPointCircle(mouse, inputPos, 6)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 bool NodeManager::isMouseOverNodeOutput(size_t index)
 {
     if (index >= nodes.size()) return false;
-    Vector2 outputPos = getNodeOutputPos(index);
     Vector2 mouse = GetMousePosition();
-    return CheckCollisionPointCircle(mouse, outputPos, 6);
+    if (connectionRenderMode == ConnectionRenderMode::SINGLE_POINT) {
+        Vector2 outputPos = getNodeOutputPos(index, 0);
+        return CheckCollisionPointCircle(mouse, outputPos, 6);
+    } else {
+        size_t numConnections = nodes[index].connections.size();
+        size_t numSlots = numConnections > 0 ? numConnections : 1;
+        for (size_t j = 0; j < numSlots; ++j) {
+            Vector2 outputPos = getNodeOutputPos(index, j);
+            if (CheckCollisionPointCircle(mouse, outputPos, 6)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 bool NodeManager::isMouseOverAnyNode()
@@ -270,33 +303,72 @@ bool NodeManager::isMouseOverAnyNode()
     return false;
 }
 
-Vector2 NodeManager::getNodeInputPos(size_t index)
+size_t NodeManager::getIncomingConnectionCount(size_t nodeIndex)
+{
+    size_t count = 0;
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        for (const auto& conn : nodes[i].connections) {
+            if (conn.toNodeIndex == nodeIndex) {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+size_t NodeManager::getIncomingConnectionIndex(size_t targetNodeIndex, size_t sourceNodeIndex, size_t sourceConnIndex)
+{
+    size_t index = 0;
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        for (size_t j = 0; j < nodes[i].connections.size(); ++j) {
+            if (nodes[i].connections[j].toNodeIndex == targetNodeIndex) {
+                if (i == sourceNodeIndex && j == sourceConnIndex) {
+                    return index;
+                }
+                ++index;
+            }
+        }
+    }
+    TraceLog(LOG_WARNING, "Could not find incoming connection index for target %zu from source %zu, conn %zu", targetNodeIndex, sourceNodeIndex, sourceConnIndex);
+    return 0;
+}
+
+Vector2 NodeManager::getNodeInputPos(size_t index, size_t connectionIndex)
 {
     if (index >= nodes.size()) {
         TraceLog(LOG_WARNING, "Invalid node index %zu for getNodeInputPos", index);
         return {0, 0};
     }
-    return {
-        nodes[index].position.x + offset.x,
-        nodes[index].position.y + offset.y + 30
-    };
+    float x = nodes[index].position.x + offset.x;
+    float y = nodes[index].position.y + offset.y + 30;
+    if (connectionRenderMode == ConnectionRenderMode::MULTI_POINT) {
+        size_t numInConnections = getIncomingConnectionCount(index);
+        size_t numSlots = numInConnections > 0 ? numInConnections : 1;
+        float spacing = 60.0f / (numSlots + 1);
+        y = nodes[index].position.y + offset.y + spacing * (connectionIndex + 1);
+    }
+    return {x, y};
 }
 
-Vector2 NodeManager::getNodeOutputPos(size_t index)
+Vector2 NodeManager::getNodeOutputPos(size_t index, size_t connectionIndex)
 {
     if (index >= nodes.size()) {
         TraceLog(LOG_WARNING, "Invalid node index %zu for getNodeOutputPos", index);
         return {0, 0};
     }
-    return {
-        nodes[index].position.x + offset.x + 150,
-        nodes[index].position.y + offset.y + 30
-    };
+    float x = nodes[index].position.x + offset.x + 150;
+    float y = nodes[index].position.y + offset.y + 30;
+    if (connectionRenderMode == ConnectionRenderMode::MULTI_POINT) {
+        size_t numConnections = nodes[index].connections.size();
+        size_t numSlots = numConnections > 0 ? numConnections : 1;
+        float spacing = 60.0f / (numSlots + 1);
+        y = nodes[index].position.y + offset.y + spacing * (connectionIndex + 1);
+    }
+    return {x, y};
 }
 
 void NodeManager::drawEditUI()
 {
-    // Validate selectedNode
     if (selectedNode < 0 || selectedNode >= static_cast<int>(nodes.size())) {
         TraceLog(LOG_WARNING, "Invalid selectedNode %d in drawEditUI", selectedNode);
         editingNode = false;
@@ -305,14 +377,11 @@ void NodeManager::drawEditUI()
         return;
     }
 
-    // Initialize node name buffer
     strncpy(textBuffer, nodes[selectedNode].name.c_str(), 256);
 
-    // Draw background and static elements first
-    DrawRectangle(600, 50, 180, 450, LIGHTGRAY);
+    DrawRectangle(600, 50, 180, 540, LIGHTGRAY);
     DrawText("Edit Node", 610, 60, 20, BLACK);
 
-    // Node name
     DrawText("Name:", 610, 90, 12, BLACK);
     if (GuiTextBox({610, 110, 160, 20}, textBuffer, 256, editTextFlag))
     {
@@ -320,32 +389,28 @@ void NodeManager::drawEditUI()
         TraceLog(LOG_INFO, "Toggled node name edit: %s", textBuffer);
     }
 
-    // Scene selection label
     DrawText("Scene:", 610, 140, 12, BLACK);
 
-    // Drag type label
     DrawText("Drag Type:", 610, 190, 12, BLACK);
 
-    // Color selection label
     DrawText("Color:", 610, 240, 12, BLACK);
 
-    // Connection management label
     DrawText("Connections:", 610, 290, 12, BLACK);
 
-    // Choice text editing
     if (selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size())) {
         DrawText("Choice Text:", 610, 340, 12, BLACK);
         if (GuiTextBox({610, 360, 160, 20}, choiceTextBuffer, 256, editChoiceTextFlag)) {
             editChoiceTextFlag = !editChoiceTextFlag;
-            isEditingChoiceText = editChoiceTextFlag; // Track active editing
+            isEditingChoiceText = editChoiceTextFlag;
             TraceLog(LOG_INFO, "Toggled choice text edit: %s, isEditingChoiceText: %d", choiceTextBuffer, isEditingChoiceText);
         }
     } else {
-        isEditingChoiceText = false; // Reset when no valid connection
+        isEditingChoiceText = false;
     }
 
-    // Buttons
-    if (GuiButton({610, 390, 160, 20}, "Delete Connection") && selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size()))
+    DrawText("Conn Render:", 610, 390, 12, BLACK);
+
+    if (GuiButton({610, 410, 160, 20}, "Delete Connection") && selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size()))
     {
         nodes[selectedNode].connections.erase(nodes[selectedNode].connections.begin() + selectedConnection);
         selectedConnection = nodes[selectedNode].connections.empty() ? -1 : 0;
@@ -358,7 +423,7 @@ void NodeManager::drawEditUI()
         TraceLog(LOG_INFO, "Connection deleted for node %d, new selectedConnection: %d", selectedNode, selectedConnection);
     }
 
-    if (GuiButton({610, 420, 160, 20}, "Save"))
+    if (GuiButton({610, 440, 160, 20}, "Save"))
     {
         nodes[selectedNode].name = textBuffer;
         if (selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size())) {
@@ -366,10 +431,10 @@ void NodeManager::drawEditUI()
             TraceLog(LOG_INFO, "Saved choice text for connection %d: %s", selectedConnection, choiceTextBuffer);
         }
         TraceLog(LOG_INFO, "Saved node name: %s", textBuffer);
-        isEditingChoiceText = false; // Reset editing state after save
+        isEditingChoiceText = false;
     }
 
-    if (GuiButton({610, 450, 160, 20}, "Delete Node"))
+    if (GuiButton({610, 470, 160, 20}, "Delete Node"))
     {
         deleteNode(selectedNode);
         editingNode = false;
@@ -379,14 +444,14 @@ void NodeManager::drawEditUI()
         TraceLog(LOG_INFO, "Node deleted");
     }
 
-    if (GuiButton({610, 480, 160, 20}, "Add New Node"))
+    if (GuiButton({610, 500, 160, 20}, "Add New Node"))
     {
         Vector2 mouse = GetMousePosition();
         addNode(mouse.x - offset.x, mouse.y - offset.y);
         TraceLog(LOG_INFO, "Node added at (%f, %f)", mouse.x - offset.x, mouse.y - offset.y);
     }
 
-    if (GuiButton({610, 510, 160, 20}, "Close"))
+    if (GuiButton({610, 530, 160, 20}, "Close"))
     {
         editingNode = false;
         selectedNode = -1;
@@ -401,10 +466,7 @@ void NodeManager::drawEditUI()
         TraceLog(LOG_INFO, "Edit UI closed");
     }
 
-    // Draw dropdowns last to ensure they appear on top
-
-    // Connection dropdown
-    static int prevSelectedConnection = -1; // Track previous connection to detect changes
+    static int prevSelectedConnection = -1;
     int connectionIndex = (selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size())) ? selectedConnection : (nodes[selectedNode].connections.empty() ? -1 : 0);
     std::string connDropdownText = "None";
     if (!nodes[selectedNode].connections.empty())
@@ -456,10 +518,41 @@ void NodeManager::drawEditUI()
             prevSelectedConnection = selectedConnection;
         }
     } else {
-        prevSelectedConnection = selectedConnection; // Update even if dropdown not clicked
+        prevSelectedConnection = selectedConnection;
     }
 
-    // Color dropdown
+    static bool renderModeDropdownEditMode = false;
+    int renderModeIndex = static_cast<int>(connectionRenderMode);
+    if (GuiDropdownBox({610, 410, 160, 20}, "Single Point;Multi Point", &renderModeIndex, renderModeDropdownEditMode))
+    {
+        renderModeDropdownEditMode = !renderModeDropdownEditMode;
+        if (!renderModeDropdownEditMode)
+        {
+            connectionRenderMode = static_cast<ConnectionRenderMode>(renderModeIndex);
+            TraceLog(LOG_INFO, "Connection render mode set to: %s", renderModeIndex == 0 ? "Single Point" : "Multi Point");
+        }
+    }
+
+    int selectedScene = nodes[selectedNode].sceneIndex;
+    std::string dropdownText = "None";
+    if (!scenes.empty()) {
+        dropdownText.clear();
+        for (size_t i = 0; i < scenes.size(); ++i) {
+            dropdownText += scenes[i].name;
+            if (i < scenes.size() - 1) dropdownText += ";";
+        }
+    }
+    if (GuiDropdownBox({610, 160, 160, 20}, dropdownText.c_str(), &selectedScene, sceneDropdownEditMode))
+    {
+        sceneDropdownEditMode = !sceneDropdownEditMode;
+        if (!sceneDropdownEditMode && selectedScene >= -1 && selectedScene < static_cast<int>(scenes.size()))
+        {
+            nodes[selectedNode].sceneIndex = selectedScene;
+            TraceLog(LOG_INFO, "Scene selected: %d (%s)", selectedScene,
+                selectedScene >= 0 ? scenes[selectedScene].name.c_str() : "None");
+        }
+    }
+
     int colorIndex = 0;
     if (nodes[selectedNode].color.r == LIGHTGRAY.r &&
         nodes[selectedNode].color.g == LIGHTGRAY.g &&
@@ -497,7 +590,6 @@ void NodeManager::drawEditUI()
         }
     }
 
-    // Drag type dropdown
     int dragTypeIndex = static_cast<int>(nodes[selectedNode].dragType);
     if (GuiDropdownBox({610, 210, 160, 20}, "Simple;Snapping", &dragTypeIndex, dragDropdownEditMode))
     {
@@ -506,27 +598,6 @@ void NodeManager::drawEditUI()
         {
             nodes[selectedNode].dragType = static_cast<DragType>(dragTypeIndex);
             TraceLog(LOG_INFO, "Drag type selected: %d", dragTypeIndex);
-        }
-    }
-
-    // Scene dropdown
-    int selectedScene = nodes[selectedNode].sceneIndex;
-    std::string dropdownText = "None";
-    if (!scenes.empty()) {
-        dropdownText.clear();
-        for (size_t i = 0; i < scenes.size(); ++i) {
-            dropdownText += scenes[i].name;
-            if (i < scenes.size() - 1) dropdownText += ";";
-        }
-    }
-    if (GuiDropdownBox({610, 160, 160, 20}, dropdownText.c_str(), &selectedScene, sceneDropdownEditMode))
-    {
-        sceneDropdownEditMode = !sceneDropdownEditMode;
-        if (!sceneDropdownEditMode && selectedScene >= -1 && selectedScene < static_cast<int>(scenes.size()))
-        {
-            nodes[selectedNode].sceneIndex = selectedScene;
-            TraceLog(LOG_INFO, "Scene selected: %d (%s)", selectedScene,
-                selectedScene >= 0 ? scenes[selectedScene].name.c_str() : "None");
         }
     }
 }
