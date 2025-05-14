@@ -109,6 +109,7 @@ private:
 
     size_t getIncomingConnectionCount(size_t nodeIndex);
     size_t getIncomingConnectionIndex(size_t targetNodeIndex, size_t sourceNodeIndex, size_t sourceConnIndex);
+    float getNodeHeight(size_t index); // Add this line
 };
 
 #endif // NODE_MANAGER_HPP

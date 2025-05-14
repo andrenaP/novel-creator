@@ -171,8 +171,9 @@ void NodeManager::draw()
     // Draw nodes
     for (size_t i = 0; i < nodes.size(); ++i)
     {
+        float nodeHeight = getNodeHeight(i);
         Vector2 pos = {nodes[i].position.x + offset.x, nodes[i].position.y + offset.y};
-        Rectangle rect = {pos.x, pos.y, 150, 60};
+        Rectangle rect = {pos.x, pos.y, 150, nodeHeight};
         DrawRectangleRounded(rect, 0.2f, 10, nodes[i].color);
         DrawText(nodes[i].name.c_str(), pos.x + 10, pos.y + 5, 12, BLACK);
 
@@ -248,8 +249,9 @@ void NodeManager::deleteNode(size_t index)
 bool NodeManager::isMouseOverNode(size_t index)
 {
     if (index >= nodes.size()) return false;
+    float nodeHeight = getNodeHeight(index);
     Vector2 pos = {nodes[index].position.x + offset.x, nodes[index].position.y + offset.y};
-    Vector2 size = {150, 60};
+    Vector2 size = {150, nodeHeight};
     Vector2 mouse = GetMousePosition();
     return (mouse.x >= pos.x && mouse.x <= pos.x + size.x && mouse.y >= pos.y && mouse.y <= pos.y + size.y);
 }
@@ -333,19 +335,38 @@ size_t NodeManager::getIncomingConnectionIndex(size_t targetNodeIndex, size_t so
     return 0;
 }
 
+float NodeManager::getNodeHeight(size_t index)
+{
+    if (index >= nodes.size()) {
+        TraceLog(LOG_WARNING, "Invalid node index %zu for getNodeHeight", index);
+        return 60.0f;
+    }
+    if (connectionRenderMode == ConnectionRenderMode::SINGLE_POINT) {
+        return 60.0f; // Fixed height in SINGLE_POINT mode
+    }
+    size_t numInConnections = getIncomingConnectionCount(index);
+    size_t numOutConnections = nodes[index].connections.size();
+    size_t maxConnections = std::max(numInConnections, numOutConnections);
+    size_t numSlots = maxConnections > 0 ? maxConnections : 1;
+    // Minimum 20px spacing per slot, plus 20px padding (10px top + 10px bottom)
+    float height = std::max(60.0f, static_cast<float>(numSlots) * 20.0f + 20.0f);
+    return height;
+}
+
 Vector2 NodeManager::getNodeInputPos(size_t index, size_t connectionIndex)
 {
     if (index >= nodes.size()) {
         TraceLog(LOG_WARNING, "Invalid node index %zu for getNodeInputPos", index);
         return {0, 0};
     }
+    float nodeHeight = getNodeHeight(index);
     float x = nodes[index].position.x + offset.x;
-    float y = nodes[index].position.y + offset.y + 30;
+    float y = nodes[index].position.y + offset.y + nodeHeight / 2.0f;
     if (connectionRenderMode == ConnectionRenderMode::MULTI_POINT) {
         size_t numInConnections = getIncomingConnectionCount(index);
         size_t numSlots = numInConnections > 0 ? numInConnections : 1;
-        float spacing = 60.0f / (numSlots + 1);
-        y = nodes[index].position.y + offset.y + spacing * (connectionIndex + 1);
+        float spacing = (nodeHeight - 20.0f) / (numSlots + 1); // 10px padding top/bottom
+        y = nodes[index].position.y + offset.y + 10.0f + spacing * (connectionIndex + 1);
     }
     return {x, y};
 }
@@ -356,13 +377,14 @@ Vector2 NodeManager::getNodeOutputPos(size_t index, size_t connectionIndex)
         TraceLog(LOG_WARNING, "Invalid node index %zu for getNodeOutputPos", index);
         return {0, 0};
     }
+    float nodeHeight = getNodeHeight(index);
     float x = nodes[index].position.x + offset.x + 150;
-    float y = nodes[index].position.y + offset.y + 30;
+    float y = nodes[index].position.y + offset.y + nodeHeight / 2.0f;
     if (connectionRenderMode == ConnectionRenderMode::MULTI_POINT) {
         size_t numConnections = nodes[index].connections.size();
         size_t numSlots = numConnections > 0 ? numConnections : 1;
-        float spacing = 60.0f / (numSlots + 1);
-        y = nodes[index].position.y + offset.y + spacing * (connectionIndex + 1);
+        float spacing = (nodeHeight - 20.0f) / (numSlots + 1); // 10px padding top/bottom
+        y = nodes[index].position.y + offset.y + 10.0f + spacing * (connectionIndex + 1);
     }
     return {x, y};
 }
