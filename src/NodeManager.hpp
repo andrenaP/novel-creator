@@ -9,7 +9,7 @@
 #include <string>
 #include <sstream>
 
-class Draggable 
+class Draggable
 {
 public:
     virtual bool isMouseOver(Vector2 pos, Vector2 size, Vector2 offset) const = 0;
@@ -17,10 +17,10 @@ public:
     virtual ~Draggable() = default;
 };
 
-class SimpleDrag : public Draggable 
+class SimpleDrag : public Draggable
 {
 public:
-    bool isMouseOver(Vector2 pos, Vector2 size, Vector2 offset) const override 
+    bool isMouseOver(Vector2 pos, Vector2 size, Vector2 offset) const override
     {
         Vector2 mouse = GetMousePosition();
         float mx = mouse.x - offset.x;
@@ -28,17 +28,17 @@ public:
         return (mx >= pos.x && mx <= pos.x + size.x && my >= pos.y && my <= pos.y + size.y);
     }
 
-    void move(Vector2& target, Vector2 delta) override 
+    void move(Vector2& target, Vector2 delta) override
     {
         target.x += delta.x;
         target.y += delta.y;
     }
 };
 
-class SnappingDrag : public Draggable 
+class SnappingDrag : public Draggable
 {
 public:
-    bool isMouseOver(Vector2 pos, Vector2 size, Vector2 offset) const override 
+    bool isMouseOver(Vector2 pos, Vector2 size, Vector2 offset) const override
     {
         Vector2 mouse = GetMousePosition();
         float mx = mouse.x - offset.x;
@@ -46,7 +46,7 @@ public:
         return (mx >= pos.x && mx <= pos.x + size.x && my >= pos.y && my <= pos.y + size.y);
     }
 
-    void move(Vector2& target, Vector2 delta) override 
+    void move(Vector2& target, Vector2 delta) override
     {
         target.x += delta.x;
         target.y += delta.y;
@@ -55,7 +55,7 @@ public:
     }
 };
 
-class NodeManager 
+class NodeManager
 {
 public:
     NodeManager(std::vector<Scene>& scenes);
@@ -99,6 +99,7 @@ private:
     int selectedConnection;
     char choiceTextBuffer[256] = "";
     bool editChoiceTextFlag;
+    bool isEditingChoiceText;
 };
 
 #endif // NODE_MANAGER_HPP
