@@ -55,7 +55,7 @@ public:
     }
 };
 
-class NodeManager
+class NodeManager : BasicUI
 {
 public:
     NodeManager(std::vector<Scene>& scenes);

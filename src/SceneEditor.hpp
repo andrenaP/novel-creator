@@ -3,11 +3,16 @@
 
 #include "raylib.h"
 #include "raygui.h"
+
 #include "Types.hpp"
+#include "BasicUI.hpp"
+
 #include <vector>
 #include <string>
 
-class SceneEditor {
+
+class SceneEditor : BasicUI
+{
 public:
     SceneEditor(std::vector<Element>& elements, std::vector<Scene>& scenes);
     void update();

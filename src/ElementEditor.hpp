@@ -3,11 +3,15 @@
 
 #include "raylib.h"
 #include "raygui.h"
+
 #include "Types.hpp"
+#include "BasicUI.hpp"
+
 #include <vector>
 #include <string>
 
-class ElementEditor {
+class ElementEditor : BasicUI
+{
 public:
     ElementEditor();
     ~ElementEditor();

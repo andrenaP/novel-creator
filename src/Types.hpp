@@ -4,13 +4,15 @@
 #include "raylib.h"
 #include "json.hpp"
 
+#include "BasicUI.hpp"
+
 #include <vector>
 #include <string>
 #include <variant>
 
 using json = nlohmann::json;
 
-struct TextElement 
+struct TextElement
 {
     std::string content;
 };
@@ -26,7 +28,8 @@ struct CharacterElement
     {
         for (auto& texture : textures) 
         {
-            if (texture.id > 0) UnloadTexture(texture);
+            if (texture.id > 0) 
+                UnloadTexture(texture);
         }
     }
 };
