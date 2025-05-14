@@ -1,5 +1,5 @@
+// #include <raylib.h>
 #define RAYGUI_IMPLEMENTATION
-// #include "raygui.h"
 #include "ElementEditor.hpp"
 #include "FileUtils.hpp"
 #include <fstream>
@@ -45,6 +45,13 @@ std::vector<Scene>& ElementEditor::getScenes() {
 
 void ElementEditor::update() {
     updateElementMode();
+}
+
+void ElementEditor::draw() {
+    DrawText("Mode: Element", 10, 10, 10, DARKGRAY);
+    DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
+    DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
+    drawElementMode();
 }
 
 void ElementEditor::updateElementMode() {
@@ -102,11 +109,120 @@ void ElementEditor::clearBuffers() {
     editImageIndex = -1;
 }
 
-void ElementEditor::draw() {
-    DrawText("Mode: Element", 10, 10, 10, DARKGRAY);
-    DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
-    DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
-    drawElementMode();
+void ElementEditor::loadElementToUI() {
+    if (currentElementIndex < 0 || currentElementIndex >= (int)elements.size()) {
+        if (!isEditing) {
+            clearBuffers();
+        }
+        return;
+    }
+
+    Element& element = elements[currentElementIndex];
+    strncpy(nameBuffer, element.name.c_str(), sizeof(nameBuffer));
+    elementTypeIndex = static_cast<int>(element.type);
+
+    if (element.type == ElementType::TEXT) {
+        strncpy(textBuffer, std::get<TextElement>(element.data).content.c_str(), sizeof(textBuffer));
+        charNameBuffer[0] = '\0';
+        bgPathBuffer[0] = '\0';
+    } else if (element.type == ElementType::CHARACTER) {
+        auto& character = std::get<CharacterElement>(element.data);
+        strncpy(charNameBuffer, character.name.c_str(), sizeof(charNameBuffer));
+        textBuffer[0] = '\0';
+        bgPathBuffer[0] = '\0';
+        // Ensure textures match images
+        for (auto& texture : character.textures) {
+            if (texture.id > 0) UnloadTexture(texture);
+        }
+        character.textures.clear();
+        for (const auto& img : character.images) {
+            Image image = LoadImage(img.second.c_str());
+            Texture2D texture = LoadTextureFromImage(image);
+            UnloadImage(image);
+            if (texture.id > 0) {
+                TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", texture.id, img.second.c_str());
+            } else {
+                TraceLog(LOG_WARNING, "Failed to load texture for path %s", img.second.c_str());
+            }
+            character.textures.push_back(texture);
+        }
+    } else {
+        auto& bg = std::get<BackgroundElement>(element.data);
+        strncpy(bgPathBuffer, bg.imagePath.c_str(), sizeof(bgPathBuffer));
+        textBuffer[0] = '\0';
+        charNameBuffer[0] = '\0';
+        // Reload texture
+        if (bg.texture.id > 0) UnloadTexture(bg.texture);
+        Image img = LoadImage(bg.imagePath.c_str());
+        bg.texture = LoadTextureFromImage(img);
+        UnloadImage(img);
+        if (bg.texture.id > 0) {
+            TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", bg.texture.id, bg.imagePath.c_str());
+        } else {
+            TraceLog(LOG_WARNING, "Failed to load texture for path %s", bg.imagePath.c_str());
+        }
+    }
+    imageNameBuffer[0] = '\0';
+    imagePathBuffer[0] = '\0';
+    showAddImage = false;
+    showEditImage = false;
+}
+
+void ElementEditor::saveElement() {
+    Element element;
+    element.name = nameBuffer;
+    element.type = static_cast<ElementType>(elementTypeIndex);
+
+    if (elementTypeIndex == 0) {
+        element.data = TextElement{textBuffer};
+    } else if (elementTypeIndex == 1) {
+        CharacterElement character;
+        character.name = charNameBuffer;
+        if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) {
+            // Preserve existing images and textures
+            character.images = std::get<CharacterElement>(elements[currentElementIndex].data).images;
+            character.textures = std::get<CharacterElement>(elements[currentElementIndex].data).textures;
+        }
+        element.data = character;
+    } else {
+        BackgroundElement bg;
+        bg.imagePath = bgPathBuffer;
+        if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::BACKGROUND) {
+            auto& oldBg = std::get<BackgroundElement>(elements[currentElementIndex].data);
+            bg.texture = oldBg.texture; // Preserve texture
+        }
+        // Load texture if none exists
+        if (bg.texture.id == 0 && IsValidImagePath(bg.imagePath)) {
+            Image img = LoadImage(bg.imagePath.c_str());
+            bg.texture = LoadTextureFromImage(img);
+            UnloadImage(img);
+            if (bg.texture.id > 0) {
+                TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", bg.texture.id, bg.imagePath.c_str());
+            } else {
+                TraceLog(LOG_WARNING, "Failed to load texture for path %s", bg.imagePath.c_str());
+            }
+        }
+        element.data = bg;
+    }
+
+    if (currentElementIndex == -1) {
+        elements.push_back(element);
+        currentElementIndex = elements.size() - 1;
+    } else {
+        // Clean up old textures if type changes
+        if (elements[currentElementIndex].type != element.type) {
+            if (elements[currentElementIndex].type == ElementType::CHARACTER) {
+                auto& oldChar = std::get<CharacterElement>(elements[currentElementIndex].data);
+                for (auto& texture : oldChar.textures) {
+                    if (texture.id > 0) UnloadTexture(texture);
+                }
+            } else if (elements[currentElementIndex].type == ElementType::BACKGROUND) {
+                auto& oldBg = std::get<BackgroundElement>(elements[currentElementIndex].data);
+                if (oldBg.texture.id > 0) UnloadTexture(oldBg.texture);
+            }
+        }
+        elements[currentElementIndex] = element;
+    }
 }
 
 void ElementEditor::drawElementMode() {
@@ -181,10 +297,10 @@ void ElementEditor::drawElementMode() {
                     std::string imageInfo = character.images[i].first + ": " + character.images[i].second;
                     GuiLabel((Rectangle){340.0f, 150.0f + static_cast<float>(i) * 60.0f, 300.0f, 20.0f}, imageInfo.c_str());
                     if (i < character.textures.size() && character.textures[i].id > 0) {
-                        DrawTexturePro(character.textures[i],
-                                       {0, 0, (float)character.textures[i].width, (float)character.textures[i].height},
-                                       {440.0f, 150.0f + static_cast<float>(i) * 60.0f, 50.0f, 50.0f},
-                                       {0, 0}, 0, WHITE);
+                        float scale = 50.0f / std::max(character.textures[i].width, character.textures[i].height);
+                        DrawTextureEx(character.textures[i],
+                                      {340.0f, 150.0f + static_cast<float>(i) * 60.0f},
+                                      0, scale, WHITE);
                         DrawText(TextFormat("Texture ID: %u", character.textures[i].id),
                                  340, 170 + static_cast<int>(i) * 60, 10, DARKGRAY);
                     }
@@ -220,6 +336,25 @@ void ElementEditor::drawElementMode() {
                     if (!file.empty()) {
                         strncpy(imagePathBuffer, file.c_str(), sizeof(imagePathBuffer));
                         TraceLog(LOG_INFO, "Selected image file: %s", imagePathBuffer);
+                        if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) {
+                            auto& character = std::get<CharacterElement>(elements[currentElementIndex].data);
+                            // Update immediately for "Select File" in edit mode
+                            if (showEditImage && editImageIndex >= 0 && editImageIndex < (int)character.images.size()) {
+                                if (character.textures[editImageIndex].id > 0) {
+                                    UnloadTexture(character.textures[editImageIndex]);
+                                }
+                                character.images[editImageIndex] = {imageNameBuffer, file};
+                                Image img = LoadImage(file.c_str());
+                                character.textures[editImageIndex] = LoadTextureFromImage(img);
+                                UnloadImage(img);
+                                if (character.textures[editImageIndex].id > 0) {
+                                    TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", character.textures[editImageIndex].id, file.c_str());
+                                } else {
+                                    TraceLog(LOG_WARNING, "Failed to load texture for path %s", file.c_str());
+                                }
+                                strncpy(imagePathBuffer, file.c_str(), sizeof(imagePathBuffer));
+                            }
+                        }
                     }
                 }
                 if (GuiButton((Rectangle){310.0f, 310.0f, 90.0f, 20.0f}, showAddImage ? "Add" : "Save")) {
@@ -227,34 +362,27 @@ void ElementEditor::drawElementMode() {
                         auto& character = std::get<CharacterElement>(elements[currentElementIndex].data);
                         if (showAddImage && IsValidImagePath(imagePathBuffer)) {
                             character.images.emplace_back(imageNameBuffer, imagePathBuffer);
-                            Texture2D texture = LoadTexture(imagePathBuffer);
+                            Image img = LoadImage(imagePathBuffer);
+                            Texture2D texture = LoadTextureFromImage(img);
+                            UnloadImage(img);
                             if (texture.id > 0) {
-                                character.textures.push_back(texture);
                                 TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", texture.id, imagePathBuffer);
                             } else {
                                 TraceLog(LOG_WARNING, "Failed to load texture for path %s", imagePathBuffer);
-                                character.textures.push_back({0});
                             }
+                            character.textures.push_back(texture);
                         } else if (showEditImage && editImageIndex >= 0 && editImageIndex < (int)character.images.size() && IsValidImagePath(imagePathBuffer)) {
-                            character.images[editImageIndex] = {imageNameBuffer, imagePathBuffer};
-                            if (editImageIndex < (int)character.textures.size() && character.textures[editImageIndex].id > 0) {
+                            if (character.textures[editImageIndex].id > 0) {
                                 UnloadTexture(character.textures[editImageIndex]);
                             }
-                            Texture2D texture = LoadTexture(imagePathBuffer);
-                            if (texture.id > 0) {
-                                if (editImageIndex < (int)character.textures.size()) {
-                                    character.textures[editImageIndex] = texture;
-                                } else {
-                                    character.textures.push_back(texture);
-                                }
-                                TraceLog(LOG_INFO, "Updated texture ID %u for path %s", texture.id, imagePathBuffer);
+                            character.images[editImageIndex] = {imageNameBuffer, imagePathBuffer};
+                            Image img = LoadImage(imagePathBuffer);
+                            character.textures[editImageIndex] = LoadTextureFromImage(img);
+                            UnloadImage(img);
+                            if (character.textures[editImageIndex].id > 0) {
+                                TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", character.textures[editImageIndex].id, imagePathBuffer);
                             } else {
-                                TraceLog(LOG_WARNING, "Failed to update texture for path %s", imagePathBuffer);
-                                if (editImageIndex >= (int)character.textures.size()) {
-                                    character.textures.push_back({0});
-                                } else {
-                                    character.textures[editImageIndex] = {0};
-                                }
+                                TraceLog(LOG_WARNING, "Failed to load texture for path %s", imagePathBuffer);
                             }
                         }
                     }
@@ -278,15 +406,28 @@ void ElementEditor::drawElementMode() {
                 if (!file.empty()) {
                     strncpy(bgPathBuffer, file.c_str(), sizeof(bgPathBuffer));
                     TraceLog(LOG_INFO, "Selected background file: %s", bgPathBuffer);
+                    if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::BACKGROUND) {
+                        auto& bg = std::get<BackgroundElement>(elements[currentElementIndex].data);
+                        bg.imagePath = file; // Update imagePath
+                        if (bg.texture.id > 0) {
+                            UnloadTexture(bg.texture); // Unload old texture
+                        }
+                        Image img = LoadImage(file.c_str());
+                        bg.texture = LoadTextureFromImage(img);
+                        UnloadImage(img);
+                        if (bg.texture.id > 0) {
+                            TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", bg.texture.id, file.c_str());
+                        } else {
+                            TraceLog(LOG_WARNING, "Failed to load texture for path %s", file.c_str());
+                        }
+                    }
                 }
             }
             if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::BACKGROUND) {
                 auto& bg = std::get<BackgroundElement>(elements[currentElementIndex].data);
                 if (bg.texture.id > 0) {
-                    DrawTexturePro(bg.texture,
-                                   {0, 0, (float)bg.texture.width, (float)bg.texture.height},
-                                   {340.0f, 130.0f, 100.0f, 100.0f},
-                                   {0, 0}, 0, WHITE);
+                    float scale = 100.0f / std::max(bg.texture.width, bg.texture.height);
+                    DrawTextureEx(bg.texture, {340.0f, 130.0f}, 0, scale, WHITE);
                     DrawText(TextFormat("Texture ID: %u", bg.texture.id), 340, 230, 10, DARKGRAY);
                 }
             }
@@ -298,123 +439,6 @@ void ElementEditor::drawElementMode() {
             loadElementToUI();
             TraceLog(LOG_INFO, "Saved Element %d", currentElementIndex);
         }
-    }
-}
-
-void ElementEditor::loadElementToUI() {
-    if (currentElementIndex < 0 || currentElementIndex >= (int)elements.size()) {
-        if (!isEditing) {
-            clearBuffers();
-        }
-        return;
-    }
-
-    Element& element = elements[currentElementIndex];
-    strncpy(nameBuffer, element.name.c_str(), sizeof(nameBuffer));
-    elementTypeIndex = static_cast<int>(element.type);
-
-    if (element.type == ElementType::TEXT) {
-        strncpy(textBuffer, std::get<TextElement>(element.data).content.c_str(), sizeof(textBuffer));
-        charNameBuffer[0] = '\0';
-        bgPathBuffer[0] = '\0';
-    } else if (element.type == ElementType::CHARACTER) {
-        auto& character = std::get<CharacterElement>(element.data);
-        strncpy(charNameBuffer, character.name.c_str(), sizeof(charNameBuffer));
-        textBuffer[0] = '\0';
-        bgPathBuffer[0] = '\0';
-        if (character.textures.size() != character.images.size()) {
-            for (auto& texture : character.textures) {
-                if (texture.id > 0) UnloadTexture(texture);
-            }
-            character.textures.clear();
-            for (const auto& img : character.images) {
-                Texture2D texture = {0};
-                if (IsValidImagePath(img.second)) {
-                    texture = LoadTexture(img.second.c_str());
-                    if (texture.id > 0) {
-                        TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", texture.id, img.second.c_str());
-                    } else {
-                        TraceLog(LOG_WARNING, "Failed to load texture for path %s", img.second.c_str());
-                    }
-                }
-                character.textures.push_back(texture);
-            }
-        }
-    } else {
-        auto& bg = std::get<BackgroundElement>(element.data);
-        strncpy(bgPathBuffer, bg.imagePath.c_str(), sizeof(bgPathBuffer));
-        textBuffer[0] = '\0';
-        charNameBuffer[0] = '\0';
-        if (bg.texture.id == 0 && IsValidImagePath(bg.imagePath)) {
-            bg.texture = LoadTexture(bg.imagePath.c_str());
-            if (bg.texture.id > 0) {
-                TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", bg.texture.id, bg.imagePath.c_str());
-            } else {
-                TraceLog(LOG_WARNING, "Failed to load texture for path %s", bg.imagePath.c_str());
-            }
-        }
-    }
-    imageNameBuffer[0] = '\0';
-    imagePathBuffer[0] = '\0';
-    showAddImage = false;
-    showEditImage = false;
-}
-
-void ElementEditor::saveElement() {
-    Element element;
-    element.name = nameBuffer;
-    element.type = static_cast<ElementType>(elementTypeIndex);
-
-    if (elementTypeIndex == 0) {
-        element.data = TextElement{textBuffer};
-    } else if (elementTypeIndex == 1) {
-        CharacterElement character;
-        character.name = charNameBuffer;
-        if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) {
-            character.images = std::get<CharacterElement>(elements[currentElementIndex].data).images;
-            character.textures = std::get<CharacterElement>(elements[currentElementIndex].data).textures;
-        }
-        element.data = character;
-    } else {
-        BackgroundElement bg;
-        bg.imagePath = bgPathBuffer;
-        if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::BACKGROUND) {
-            bg.texture = std::get<BackgroundElement>(elements[currentElementIndex].data).texture;
-        }
-        if (IsValidImagePath(bgPathBuffer) && bg.texture.id == 0) {
-            bg.texture = LoadTexture(bgPathBuffer);
-            if (bg.texture.id > 0) {
-                TraceLog(LOG_INFO, "Loaded texture ID %u for path %s", bg.texture.id, bgPathBuffer);
-            } else {
-                TraceLog(LOG_WARNING, "Failed to load texture for path %s", bgPathBuffer);
-            }
-        }
-        element.data = bg;
-    }
-
-    if (currentElementIndex == -1) {
-        elements.push_back(element);
-        currentElementIndex = elements.size() - 1;
-    } else {
-        if (elements[currentElementIndex].type != element.type) {
-            if (elements[currentElementIndex].type == ElementType::CHARACTER) {
-                auto& oldChar = std::get<CharacterElement>(elements[currentElementIndex].data);
-                for (auto& texture : oldChar.textures) {
-                    if (texture.id > 0) UnloadTexture(texture);
-                }
-            } else if (elements[currentElementIndex].type == ElementType::BACKGROUND) {
-                auto& oldBg = std::get<BackgroundElement>(elements[currentElementIndex].data);
-                if (oldBg.texture.id > 0) UnloadTexture(oldBg.texture);
-            }
-        } else if (element.type == ElementType::BACKGROUND) {
-            auto& oldBg = std::get<BackgroundElement>(elements[currentElementIndex].data);
-            auto& newBg = std::get<BackgroundElement>(element.data);
-            if (oldBg.imagePath != newBg.imagePath && oldBg.texture.id > 0) {
-                UnloadTexture(oldBg.texture);
-                newBg.texture = {0};
-            }
-        }
-        elements[currentElementIndex] = element;
     }
 }
 
