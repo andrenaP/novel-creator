@@ -17,29 +17,29 @@ struct TextElement
     std::string content;
 };
 
-struct CharacterElement 
+struct CharacterElement
 {
     std::string name;
     std::vector<std::pair<std::string, std::string>> images;
     std::vector<Texture2D> textures;
 
     CharacterElement() = default;
-    ~CharacterElement() 
+    ~CharacterElement()
     {
-        for (auto& texture : textures) 
+        for (auto& texture : textures)
         {
-            if (texture.id > 0) 
+            if (texture.id > 0)
                 UnloadTexture(texture);
         }
     }
 };
 
-struct BackgroundElement 
+struct BackgroundElement
 {
     std::string imagePath;
     Texture2D texture = {0};
 
-    ~BackgroundElement() 
+    ~BackgroundElement()
     {
         if (texture.id > 0) UnloadTexture(texture);
     }
@@ -47,34 +47,38 @@ struct BackgroundElement
 
 enum class ElementType { TEXT, CHARACTER, BACKGROUND };
 
-struct Element 
+struct Element
 {
     ElementType type;
     std::string name;
     std::variant<TextElement, CharacterElement, BackgroundElement> data;
 
-    Element() : 
-        type(ElementType::TEXT), 
-        name("New Element"), 
-        data(TextElement{""}) 
+    Element() :
+        type(ElementType::TEXT),
+        name("New Element"),
+        data(TextElement{""})
     {}
     ~Element() = default;
 };
 
-struct SceneElement 
+struct SceneElement
 {
     size_t elementIndex;
     float startTime;
     float endTime;
+    int renderlevel;
+    std::string selectedPose; // Moved from CharacterElement
+
+    SceneElement() : elementIndex(0), startTime(0.0f), endTime(1.0f), renderlevel(0), selectedPose("") {}
 };
 
-struct Scene 
+struct Scene
 {
     std::string name;
     std::vector<SceneElement> elements;
 };
 
-struct NodeConnection 
+struct NodeConnection
 {
     size_t toNodeIndex;
     std::string choiceText;
@@ -92,28 +96,28 @@ struct Node
     Color color; // Changed from NodeColor to Raylib Color
 
     Node():
-        name("Node"), 
-        sceneIndex(-1), 
-        connections({}), 
-        position({0, 0}), 
-        dragType(DragType::SIMPLE), 
-        color(LIGHTGRAY) 
+        name("Node"),
+        sceneIndex(-1),
+        connections({}),
+        position({0, 0}),
+        dragType(DragType::SIMPLE),
+        color(LIGHTGRAY)
     {}
 
     Node(
-        const std::string& n = "Node", 
-        int s = -1, 
-        const std::vector<NodeConnection>& c = {}, 
-        Vector2 p = {0, 0}, 
-        DragType dt = DragType::SIMPLE, 
+        const std::string& n = "Node",
+        int s = -1,
+        const std::vector<NodeConnection>& c = {},
+        Vector2 p = {0, 0},
+        DragType dt = DragType::SIMPLE,
         Color col = LIGHTGRAY)
-    : 
-        name(n), 
-        sceneIndex(s), 
-        connections(c), 
-        position(p), 
-        dragType(dt), 
-        color(col) 
+    :
+        name(n),
+        sceneIndex(s),
+        connections(c),
+        position(p),
+        dragType(dt),
+        color(col)
     {}
 };
 

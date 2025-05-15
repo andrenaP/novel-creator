@@ -32,6 +32,8 @@ private:
     bool isEditing;
     float sceneScrollOffset;
     float sceneElementScrollOffset;
+    char renderLevelBuffer[32];
+    char poseBuffer[32];
 
     void updateSceneMode();
 
@@ -39,7 +41,8 @@ private:
     void drawSceneMode();
     void loadSceneToUI();
     void loadSceneElementToUI();
-    void saveSceneElement(size_t selectedElementIndex);
+    // void saveSceneElement1(size_t selectedElementIndex);
+    void saveSceneElement(size_t selectedElementIndex, int selectedPoseIndex);
     void sortSceneElements();
     void exportToJson();
 };
