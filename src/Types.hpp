@@ -94,6 +94,7 @@ struct Node
     Vector2 position;
     DragType dragType;
     Color color; // Changed from NodeColor to Raylib Color
+    bool isStartNode; // New field to mark start node
 
     Node():
         name("Node"),
@@ -101,7 +102,8 @@ struct Node
         connections({}),
         position({0, 0}),
         dragType(DragType::SIMPLE),
-        color(LIGHTGRAY)
+        color(LIGHTGRAY),
+        isStartNode(false)
     {}
 
     Node(
@@ -110,14 +112,16 @@ struct Node
         const std::vector<NodeConnection>& c = {},
         Vector2 p = {0, 0},
         DragType dt = DragType::SIMPLE,
-        Color col = LIGHTGRAY)
+        Color col = LIGHTGRAY,
+        bool start = false) // Added isStartNode parameter
     :
         name(n),
         sceneIndex(s),
         connections(c),
         position(p),
         dragType(dt),
-        color(col)
+        color(col),
+        isStartNode(start)
     {}
 };
 

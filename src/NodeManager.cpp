@@ -18,7 +18,8 @@ NodeManager::NodeManager(std::vector<Scene>& scenes) :
     isEditingChoiceText(false),
     connectionRenderMode(ConnectionRenderMode::SINGLE_POINT)
 {
-    nodes.emplace_back(Node{"Start Node", -1, {}, {100, 100}, DragType::SIMPLE, LIGHTGRAY});
+    // Initialize the first node as the start node
+    nodes.emplace_back(Node{"Start Node", -1, {}, {100, 100}, DragType::SIMPLE, LIGHTGRAY, true});
 }
 
 void NodeManager::update()
@@ -227,6 +228,7 @@ void NodeManager::deleteNode(size_t index)
         TraceLog(LOG_WARNING, "Attempted to delete invalid node index %zu", index);
         return;
     }
+    bool wasStartNode = nodes[index].isStartNode;
     nodes.erase(nodes.begin() + index);
     for (auto& node : nodes)
     {
@@ -243,6 +245,11 @@ void NodeManager::deleteNode(size_t index)
                 ++it;
             }
         }
+    }
+    // If the deleted node was the start node, assign the first node as the new start node
+    if (wasStartNode && !nodes.empty()) {
+        nodes[0].isStartNode = true;
+        TraceLog(LOG_INFO, "Assigned node 0 as new start node after deletion");
     }
 }
 
@@ -401,7 +408,8 @@ void NodeManager::drawEditUI()
 
     strncpy(textBuffer, nodes[selectedNode].name.c_str(), 256);
 
-    DrawRectangle(600, 50, 180, 540, LIGHTGRAY);
+    // Adjust UI height to accommodate new toggle
+    DrawRectangle(600, 50, 180, 560, LIGHTGRAY);
     DrawText("Edit Node", 610, 60, 20, BLACK);
 
     DrawText("Name:", 610, 90, 12, BLACK);
@@ -417,11 +425,40 @@ void NodeManager::drawEditUI()
 
     DrawText("Color:", 610, 240, 12, BLACK);
 
-    DrawText("Connections:", 610, 290, 12, BLACK);
+    // Add Start Node toggle
+    DrawText("Start Node:", 610, 290, 12, BLACK);
+    bool isStartNode = nodes[selectedNode].isStartNode;
+    if (GuiCheckBox({610, 310, 20, 20}, "", &isStartNode))
+    {
+        if (isStartNode && !nodes[selectedNode].isStartNode) {
+            // Clear existing start node
+            for (auto& node : nodes) {
+                node.isStartNode = false;
+            }
+            nodes[selectedNode].isStartNode = true;
+            TraceLog(LOG_INFO, "Set node %d as start node", selectedNode);
+        } else if (!isStartNode && nodes[selectedNode].isStartNode) {
+            nodes[selectedNode].isStartNode = false;
+            // Assign first node as start node if no other is selected
+            bool hasStartNode = false;
+            for (const auto& node : nodes) {
+                if (node.isStartNode) {
+                    hasStartNode = true;
+                    break;
+                }
+            }
+            if (!hasStartNode && !nodes.empty()) {
+                nodes[0].isStartNode = true;
+                TraceLog(LOG_INFO, "Assigned node 0 as start node after unsetting");
+            }
+        }
+    }
+
+    DrawText("Connections:", 610, 340, 12, BLACK);
 
     if (selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size())) {
-        DrawText("Choice Text:", 610, 340, 12, BLACK);
-        if (GuiTextBox({610, 360, 160, 20}, choiceTextBuffer, 256, editChoiceTextFlag)) {
+        DrawText("Choice Text:", 610, 360, 12, BLACK);
+        if (GuiTextBox({610, 380, 160, 20}, choiceTextBuffer, 256, editChoiceTextFlag)) {
             editChoiceTextFlag = !editChoiceTextFlag;
             isEditingChoiceText = editChoiceTextFlag;
             TraceLog(LOG_INFO, "Toggled choice text edit: %s, isEditingChoiceText: %d", choiceTextBuffer, isEditingChoiceText);
@@ -430,9 +467,9 @@ void NodeManager::drawEditUI()
         isEditingChoiceText = false;
     }
 
-    DrawText("Conn Render:", 610, 390, 12, BLACK);
+    DrawText("Conn Render:", 610, 410, 12, BLACK);
 
-    if (GuiButton({610, 410, 160, 20}, "Delete Connection") && selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size()))
+    if (GuiButton({610, 430, 160, 20}, "Delete Connection") && selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size()))
     {
         nodes[selectedNode].connections.erase(nodes[selectedNode].connections.begin() + selectedConnection);
         selectedConnection = nodes[selectedNode].connections.empty() ? -1 : 0;
@@ -445,7 +482,7 @@ void NodeManager::drawEditUI()
         TraceLog(LOG_INFO, "Connection deleted for node %d, new selectedConnection: %d", selectedNode, selectedConnection);
     }
 
-    if (GuiButton({610, 440, 160, 20}, "Save"))
+    if (GuiButton({610, 460, 160, 20}, "Save"))
     {
         nodes[selectedNode].name = textBuffer;
         if (selectedConnection >= 0 && selectedConnection < static_cast<int>(nodes[selectedNode].connections.size())) {
@@ -456,7 +493,7 @@ void NodeManager::drawEditUI()
         isEditingChoiceText = false;
     }
 
-    if (GuiButton({610, 470, 160, 20}, "Delete Node"))
+    if (GuiButton({610, 490, 160, 20}, "Delete Node"))
     {
         deleteNode(selectedNode);
         editingNode = false;
@@ -466,14 +503,14 @@ void NodeManager::drawEditUI()
         TraceLog(LOG_INFO, "Node deleted");
     }
 
-    if (GuiButton({610, 500, 160, 20}, "Add New Node"))
+    if (GuiButton({610, 520, 160, 20}, "Add New Node"))
     {
         Vector2 mouse = GetMousePosition();
         addNode(mouse.x - offset.x, mouse.y - offset.y);
         TraceLog(LOG_INFO, "Node added at (%f, %f)", mouse.x - offset.x, mouse.y - offset.y);
     }
 
-    if (GuiButton({610, 530, 160, 20}, "Close"))
+    if (GuiButton({610, 550, 160, 20}, "Close"))
     {
         editingNode = false;
         selectedNode = -1;
@@ -514,7 +551,7 @@ void NodeManager::drawEditUI()
         TraceLog(LOG_DEBUG, "Node %d has no connections", selectedNode);
     }
     TraceLog(LOG_DEBUG, "Connections dropdown text: %s, connectionIndex: %d", connDropdownText.c_str(), connectionIndex);
-    if (GuiDropdownBox({610, 310, 160, 20}, connDropdownText.c_str(), &connectionIndex, connDropdownEditMode))
+    if (GuiDropdownBox({610, 350, 160, 20}, connDropdownText.c_str(), &connectionIndex, connDropdownEditMode))
     {
         connDropdownEditMode = !connDropdownEditMode;
         if (!connDropdownEditMode)
@@ -545,7 +582,7 @@ void NodeManager::drawEditUI()
 
     static bool renderModeDropdownEditMode = false;
     int renderModeIndex = static_cast<int>(connectionRenderMode);
-    if (GuiDropdownBox({610, 410, 160, 20}, "Single Point;Multi Point", &renderModeIndex, renderModeDropdownEditMode))
+    if (GuiDropdownBox({610, 430, 160, 20}, "Single Point;Multi Point", &renderModeIndex, renderModeDropdownEditMode))
     {
         renderModeDropdownEditMode = !renderModeDropdownEditMode;
         if (!renderModeDropdownEditMode)
