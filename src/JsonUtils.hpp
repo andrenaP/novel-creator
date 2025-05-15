@@ -234,7 +234,7 @@ namespace JsonUtils
         file.close();
     }
 
-    // Import all data from file
+    // Import all data from file and load textures
     void importFromFile(std::vector<Element>& elements, std::vector<Scene>& scenes, std::vector<Node>& nodes, const std::string& filename)
     {
         std::ifstream file(filename);
@@ -253,6 +253,60 @@ namespace JsonUtils
             for (const auto& je : j["elements"])
             {
                 elements.push_back(jsonToElement(je));
+            }
+        }
+
+        // Load textures for CharacterElement and BackgroundElement
+        for (auto& element : elements)
+        {
+            if (element.type == ElementType::CHARACTER)
+            {
+                auto& character = std::get<CharacterElement>(element.data);
+                character.textures.clear(); // Clear any existing textures
+                for (const auto& img : character.images)
+                {
+                    if (!img.second.empty())
+                    {
+                        Image image = LoadImage(img.second.c_str());
+                        if (image.data != nullptr)
+                        {
+                            Texture2D texture = LoadTextureFromImage(image);
+                            character.textures.push_back(texture);
+                            UnloadImage(image);
+                        }
+                        else
+                        {
+                            TraceLog(LOG_WARNING, "Failed to load image: %s", img.second.c_str());
+                            character.textures.push_back({0}); // Push empty texture
+                        }
+                    }
+                    else
+                    {
+                        character.textures.push_back({0}); // Push empty texture for empty path
+                    }
+                }
+            }
+            else if (element.type == ElementType::BACKGROUND)
+            {
+                auto& background = std::get<BackgroundElement>(element.data);
+                if (!background.imagePath.empty())
+                {
+                    Image image = LoadImage(background.imagePath.c_str());
+                    if (image.data != nullptr)
+                    {
+                        background.texture = LoadTextureFromImage(image);
+                        UnloadImage(image);
+                    }
+                    else
+                    {
+                        TraceLog(LOG_WARNING, "Failed to load image: %s", background.imagePath.c_str());
+                        background.texture = {0}; // Set empty texture
+                    }
+                }
+                else
+                {
+                    background.texture = {0}; // Set empty texture for empty path
+                }
             }
         }
 
