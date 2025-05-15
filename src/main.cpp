@@ -2,6 +2,7 @@
 // #include "SceneEditor.hpp"
 // #include "NodeManager.hpp"
 // #include "Render.hpp"
+// #include "JsonUtils.hpp"
 // #include "raylib.h"
 
 // enum class Mode { ELEMENT, SCENE, NODE, RENDER };
@@ -101,10 +102,45 @@
 //             if (GuiButton({230, 50, 100, 30}, "Reset Slide")) {
 //                 renderer.resetSlide();
 //             }
-//             DrawText("Press TAB to switch modes", 800, 560, 10, DARKGRAY);
 //             break;
 //         default:
 //             break;
+//         }
+
+//         // Draw import/export buttons and mode switch text
+//         if (GuiButton({800, 460, 100, 30}, "Export Project")) {
+//             try {
+//                 JsonUtils::exportToFile(
+//                     elementEditor.getElements(),
+//                     elementEditor.getScenes(),
+//                     nodeManager.getNodes(),
+//                     "project.json"
+//                 );
+//                 TraceLog(LOG_INFO, "Exported project to project.json");
+//             } catch (const std::exception& e) {
+//                 TraceLog(LOG_ERROR, "Export failed: %s", e.what());
+//             }
+//         }
+//         if (GuiButton({800, 500, 100, 30}, "Import Project")) {
+//             try {
+//                 JsonUtils::importFromFile(
+//                     elementEditor.getElements(),
+//                     elementEditor.getScenes(),
+//                     nodeManager.getNodes(),
+//                     "project.json"
+//                 );
+//                 // Reset renderer to start node after import
+//                 for (size_t i = 0; i < nodeManager.getNodes().size(); ++i) {
+//                     if (nodeManager.getNodes()[i].isStartNode) {
+//                         renderer.setCurrentNodeIndex(i);
+//                         TraceLog(LOG_INFO, "Set render node to start node %d after import", i);
+//                         break;
+//                     }
+//                 }
+//                 TraceLog(LOG_INFO, "Imported project from project.json");
+//             } catch (const std::exception& e) {
+//                 TraceLog(LOG_ERROR, "Import failed: %s", e.what());
+//             }
 //         }
 //         DrawText("Press TAB to switch between\nElement, Scene, Node, and Render modes", 800, 540, 10, DARKGRAY);
 //         EndDrawing();

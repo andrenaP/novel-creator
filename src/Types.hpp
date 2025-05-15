@@ -96,15 +96,15 @@ struct Node
     Color color; // Changed from NodeColor to Raylib Color
     bool isStartNode; // New field to mark start node
 
-    Node():
-        name("Node"),
-        sceneIndex(-1),
-        connections({}),
-        position({0, 0}),
-        dragType(DragType::SIMPLE),
-        color(LIGHTGRAY),
-        isStartNode(false)
-    {}
+    // Node():
+    //     name("Node"),
+    //     sceneIndex(-1),
+    //     connections({}),
+    //     position({0, 0}),
+    //     dragType(DragType::SIMPLE),
+    //     color(LIGHTGRAY),
+    //     isStartNode(false)
+    // {}
 
     Node(
         const std::string& n = "Node",
