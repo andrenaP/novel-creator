@@ -35,7 +35,7 @@ private:
     bool showButtons;
 
     void drawScene(const Scene& scene, float currentTime, int currentSlide);
-    void drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide);
+    void drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide, int characterCount, int currentCharacterIndex, float spacing, float margin);
 };
 
 #endif // RENDER_HPP

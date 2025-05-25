@@ -1,6 +1,4 @@
-// #define RAYGUI_IMPLEMENTATION
 #include "Render.hpp"
-// #include "FileUtils.hpp"
 #include <algorithm>
 #include "raygui.h"
 
@@ -9,7 +7,7 @@ Render::Render(std::vector<Element>& elements, std::vector<Scene>& scenes, std::
       scrollOffset({0, 0}), buttonSpacing(40.0f), showButtons(false) {}
 
 void Render::update(float currentTime, int currentSlide) {
-    this->currentSlide = currentSlide; // Sync with external slide counter
+    this->currentSlide = currentSlide;
     if (currentNodeIndex < 0 || currentNodeIndex >= (int)nodes.size()) {
         showButtons = false;
         TraceLog(LOG_WARNING, "No valid node selected (index: %d)", currentNodeIndex);
@@ -17,9 +15,8 @@ void Render::update(float currentTime, int currentSlide) {
     }
 
     const Node& currentNode = nodes[currentNodeIndex];
-    showButtons = true; // Default to showing buttons
+    showButtons = true;
 
-    // Check if all elements in the scene are past their endTime for the current slide
     if (currentNode.sceneIndex >= 0 && currentNode.sceneIndex < (int)scenes.size()) {
         const Scene& scene = scenes[currentNode.sceneIndex];
         bool allElementsDone = true;
@@ -41,11 +38,10 @@ void Render::update(float currentTime, int currentSlide) {
         TraceLog(LOG_INFO, "Slide %d, Max EndTime: %.2f, All Elements Done: %d, Show Buttons: %d",
                  currentSlide, maxEndTime, allElementsDone, showButtons);
     } else {
-        showButtons = true; // Show buttons if no scene is associated
+        showButtons = true;
         TraceLog(LOG_INFO, "No valid scene for node %d, showing buttons", currentNodeIndex);
     }
 
-    // Handle mouse wheel for scrolling connection buttons
     if (showButtons) {
         float mouseWheelMove = GetMouseWheelMove();
         if (mouseWheelMove != 0) {
@@ -55,14 +51,13 @@ void Render::update(float currentTime, int currentSlide) {
             scrollOffset.y = std::max(0.0f, std::min(scrollOffset.y, maxScroll));
         }
 
-        // Handle button clicks for node connections
         Vector2 mousePos = GetMousePosition();
         for (size_t i = 0; i < nodes[currentNodeIndex].connections.size(); ++i) {
             float yPos = GetScreenHeight() - 150.0f + i * buttonSpacing - scrollOffset.y;
             Rectangle buttonRect = {GetScreenWidth() - 220.0f, yPos, 200.0f, 30.0f};
             if (CheckCollisionPointRec(mousePos, buttonRect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 currentNodeIndex = nodes[currentNodeIndex].connections[i].toNodeIndex;
-                resetSlide(); // Reset slide when switching nodes
+                resetSlide();
                 scrollOffset.y = 0.0f;
                 TraceLog(LOG_INFO, "Switched to node %d", currentNodeIndex);
                 break;
@@ -82,7 +77,6 @@ void Render::draw() {
         drawScene(scenes[currentNode.sceneIndex], GetTime(), currentSlide);
     }
 
-    // Draw connection buttons if scene is done
     if (showButtons) {
         if (nodes[currentNodeIndex].connections.empty()) {
             DrawText("No choices available", GetScreenWidth() - 220, GetScreenHeight() - 180, 20, RED);
@@ -96,7 +90,7 @@ void Render::draw() {
                     if (GuiButton({GetScreenWidth() - 220.0f, yPos, 200.0f, 30.0f},
                                   nodes[currentNodeIndex].connections[i].choiceText.c_str())) {
                         currentNodeIndex = nodes[currentNodeIndex].connections[i].toNodeIndex;
-                        resetSlide(); // Reset slide when switching nodes
+                        resetSlide();
                         scrollOffset.y = 0.0f;
                         TraceLog(LOG_INFO, "Switched to node %d via button", currentNodeIndex);
                     }
@@ -108,7 +102,7 @@ void Render::draw() {
 }
 
 void Render::drawScene(const Scene& scene, float currentTime, int currentSlide) {
-    // Collect elements to render, sorted by renderlevel
+    // Collect all elements to render
     std::vector<std::pair<const SceneElement*, const Element*>> renderElements;
     for (const auto& sceneElement : scene.elements) {
         if (sceneElement.elementIndex < elements.size() &&
@@ -116,16 +110,60 @@ void Render::drawScene(const Scene& scene, float currentTime, int currentSlide) 
             renderElements.emplace_back(&sceneElement, &elements[sceneElement.elementIndex]);
         }
     }
-    std::sort(renderElements.begin(), renderElements.end(),
+
+    // Separate characters and sort by positionIndex
+    std::vector<std::pair<const SceneElement*, const Element*>> characterElements;
+    for (const auto& [sceneElement, element] : renderElements) {
+        if (element->type == ElementType::CHARACTER) {
+            characterElements.emplace_back(sceneElement, element);
+        }
+    }
+    std::sort(characterElements.begin(), characterElements.end(),
+              [](const auto& a, const auto& b) {
+                  const auto& charA = std::get<CharacterElement>(a.second->data);
+                  const auto& charB = std::get<CharacterElement>(b.second->data);
+                  return charA.positionIndex < charB.positionIndex;
+              });
+
+    // Calculate spacing for characters
+    int characterCount = characterElements.size();
+    float screenWidth = (float)GetScreenWidth();
+    float characterWidth = 0.0f; // Approximate width per character (will be updated)
+    float spacing = 50.0f; // Fixed spacing between characters
+    if (characterCount > 0) {
+        // Estimate character width based on the first character's texture
+        const auto& firstCharacter = std::get<CharacterElement>(characterElements[0].second->data);
+        for (size_t i = 0; i < firstCharacter.textures.size(); ++i) {
+            if (firstCharacter.textures[i].id > 0) {
+                characterWidth = firstCharacter.textures[i].width * 0.5f; // Scale is 0.5f
+                break;
+            }
+        }
+    }
+    float totalWidth = characterCount * characterWidth + (characterCount > 1 ? (characterCount - 1) * spacing : 0);
+    float startX = (screenWidth - totalWidth) / 2.0f; // Center the group
+
+    // Render non-character elements, sorted by renderlevel
+    std::vector<std::pair<const SceneElement*, const Element*>> nonCharacterElements;
+    for (const auto& [sceneElement, element] : renderElements) {
+        if (element->type != ElementType::CHARACTER) {
+            nonCharacterElements.emplace_back(sceneElement, element);
+        }
+    }
+    std::sort(nonCharacterElements.begin(), nonCharacterElements.end(),
               [](const auto& a, const auto& b) { return a.first->renderlevel < b.first->renderlevel; });
 
-    // Render elements in order
-    for (const auto& [sceneElement, element] : renderElements) {
-        drawElement(*sceneElement, *element, currentTime, currentSlide);
+    for (const auto& [sceneElement, element] : nonCharacterElements) {
+        drawElement(*sceneElement, *element, currentTime, currentSlide, characterCount, 0, spacing, startX);
+    }
+
+    // Render characters in positionIndex order
+    for (size_t i = 0; i < characterElements.size(); ++i) {
+        drawElement(*characterElements[i].first, *characterElements[i].second, currentTime, currentSlide, characterCount, i, spacing, startX);
     }
 }
 
-void Render::drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide) {
+void Render::drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide, int characterCount, int currentCharacterIndex, float spacing, float startX) {
     if (element.type == ElementType::TEXT) {
         const auto& text = std::get<TextElement>(element.data);
         int textWidth = MeasureText(text.content.c_str(), 20);
@@ -152,13 +190,17 @@ void Render::drawElement(const SceneElement& sceneElement, const Element& elemen
             if (character.images[i].first == sceneElement.selectedPose && i < character.textures.size() &&
                 character.textures[i].id > 0) {
                 float scale = 0.5f;
-                float posX = (GetScreenWidth() - character.textures[i].width * scale) / 2;
+                float characterWidth = character.textures[i].width * scale;
+                // Calculate posX: startX + index * (characterWidth + spacing)
+                float posX = startX + currentCharacterIndex * (characterWidth + spacing);
                 float posY = GetScreenHeight() - character.textures[i].height * scale;
                 DrawTextureEx(character.textures[i],
                               {posX, posY},
                               0.0f,
                               scale,
                               WHITE);
+                TraceLog(LOG_INFO, "Rendering character '%s' at posX=%.2f, posY=%.2f, positionIndex=%d",
+                         character.name.c_str(), posX, posY, character.positionIndex);
                 break;
             }
         }

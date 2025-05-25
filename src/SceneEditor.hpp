@@ -33,6 +33,7 @@ private:
     float sceneScrollOffset;
     float sceneElementScrollOffset;
     char renderLevelBuffer[32];
+    char positionIndexBuffer[32];
     char poseBuffer[32];
 
     void updateSceneMode();

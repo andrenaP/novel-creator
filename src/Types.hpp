@@ -22,8 +22,9 @@ struct CharacterElement
     std::string name;
     std::vector<std::pair<std::string, std::string>> images;
     std::vector<Texture2D> textures;
+    int positionIndex; // positionIndex
 
-    CharacterElement() = default;
+    CharacterElement() : positionIndex(0) {} // Initialize positionIndex to 0
     ~CharacterElement()
     {
         for (auto& texture : textures)
@@ -67,9 +68,10 @@ struct SceneElement
     float startTime;
     float endTime;
     int renderlevel;
-    std::string selectedPose; // Moved from CharacterElement
+    int positionIndex; // Added for CharacterElement position2
+    std::string selectedPose;
 
-    SceneElement() : elementIndex(0), startTime(0.0f), endTime(1.0f), renderlevel(0), selectedPose("") {}
+    SceneElement() : elementIndex(0), startTime(0.0f), endTime(1.0f), renderlevel(0), positionIndex(0), selectedPose("") {}
 };
 
 struct Scene
@@ -89,22 +91,12 @@ enum class DragType { SIMPLE, SNAPPING };
 struct Node
 {
     std::string name;
-    int sceneIndex; // Single scene index (default -1 for none)
+    int sceneIndex;
     std::vector<NodeConnection> connections;
     Vector2 position;
     DragType dragType;
-    Color color; // Changed from NodeColor to Raylib Color
-    bool isStartNode; // New field to mark start node
-
-    // Node():
-    //     name("Node"),
-    //     sceneIndex(-1),
-    //     connections({}),
-    //     position({0, 0}),
-    //     dragType(DragType::SIMPLE),
-    //     color(LIGHTGRAY),
-    //     isStartNode(false)
-    // {}
+    Color color;
+    bool isStartNode;
 
     Node(
         const std::string& n = "Node",
@@ -113,7 +105,7 @@ struct Node
         Vector2 p = {0, 0},
         DragType dt = DragType::SIMPLE,
         Color col = LIGHTGRAY,
-        bool start = false) // Added isStartNode parameter
+        bool start = false)
     :
         name(n),
         sceneIndex(s),

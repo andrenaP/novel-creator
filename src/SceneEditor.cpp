@@ -16,6 +16,7 @@ SceneEditor::SceneEditor(std::vector<Element>& elements, std::vector<Scene>& sce
     startTimeBuffer[0] = '\0';
     endTimeBuffer[0] = '\0';
     renderLevelBuffer[0] = '\0';
+    positionIndexBuffer[0] = '\0'; // Added for positionIndex
     poseBuffer[0] = '\0';
 }
 
@@ -33,6 +34,7 @@ void SceneEditor::updateSceneMode() {
         startTimeBuffer[0] = '\0';
         endTimeBuffer[0] = '\0';
         renderLevelBuffer[0] = '\0';
+        positionIndexBuffer[0] = '\0'; // Added for positionIndex
         poseBuffer[0] = '\0';
         currentSceneElementIndex = -1;
         prevSceneElementIndex = -1;
@@ -66,6 +68,8 @@ void SceneEditor::updateSceneMode() {
             newFocusedTextBox = 8;
         } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 160.0f, 100.0f, 20.0f})) {
             newFocusedTextBox = 9;
+        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 190.0f, 100.0f, 20.0f})) {
+            newFocusedTextBox = 10; // Added for positionIndex
         }
 
         if (newFocusedTextBox != -1) {
@@ -84,6 +88,7 @@ void SceneEditor::clearBuffers() {
     startTimeBuffer[0] = '\0';
     endTimeBuffer[0] = '\0';
     renderLevelBuffer[0] = '\0';
+    positionIndexBuffer[0] = '\0'; // Added for positionIndex
     poseBuffer[0] = '\0';
 }
 
@@ -133,6 +138,7 @@ void SceneEditor::drawSceneMode() {
         startTimeBuffer[0] = '\0';
         endTimeBuffer[0] = '\0';
         renderLevelBuffer[0] = '\0';
+        positionIndexBuffer[0] = '\0'; // Added for positionIndex
         poseBuffer[0] = '\0';
         TraceLog(LOG_INFO, "Creating new Scene");
     }
@@ -147,11 +153,11 @@ void SceneEditor::drawSceneMode() {
         GuiLabel((Rectangle){230.0f, 30.0f, 100.0f, 20.0f}, "Scene Name:");
         GuiTextBox((Rectangle){340.0f, 30.0f, 200.0f, 20.0f}, sceneNameBuffer, 256, focusedTextBox == 6);
 
-        GuiLabel((Rectangle){230.0f, 190.0f, 100.0f, 20.0f}, "Scene Elements:");
-        BeginScissorMode(280, 220, 640, 370);
+        GuiLabel((Rectangle){230.0f, 220.0f, 100.0f, 20.0f}, "Scene Elements:"); // Adjusted Y position
+        BeginScissorMode(280, 250, 640, 340); // Adjusted for new text box
         if (currentSceneIndex >= 0) {
             for (size_t i = 0; i < scenes[currentSceneIndex].elements.size(); ++i) {
-                float yPos = 220.0f + static_cast<float>(i) * 40.0f - sceneElementScrollOffset;
+                float yPos = 250.0f + static_cast<float>(i) * 40.0f - sceneElementScrollOffset;
                 if (yPos > -40.0f && yPos < 590.0f) {
                     size_t elemIndex = scenes[currentSceneIndex].elements[i].elementIndex;
                     if (elemIndex < elements.size()) {
@@ -160,11 +166,13 @@ void SceneEditor::drawSceneMode() {
                                      scenes[currentSceneIndex].elements[i].startTime,
                                      scenes[currentSceneIndex].elements[i].endTime,
                                      scenes[currentSceneIndex].elements[i].renderlevel);
-                        if (elements[elemIndex].type == ElementType::CHARACTER && !scenes[currentSceneIndex].elements[i].selectedPose.empty()) {
-                            elementInfo += ", " + scenes[currentSceneIndex].elements[i].selectedPose + "]";
-                        } else {
-                            elementInfo += "]";
+                        if (elements[elemIndex].type == ElementType::CHARACTER) {
+                            elementInfo += TextFormat(", Pos %d", scenes[currentSceneIndex].elements[i].positionIndex);
+                            if (!scenes[currentSceneIndex].elements[i].selectedPose.empty()) {
+                                elementInfo += ", " + scenes[currentSceneIndex].elements[i].selectedPose;
+                            }
                         }
+                        elementInfo += "]";
                         Color buttonColor = (static_cast<int>(i) == currentSceneElementIndex) ? SKYBLUE : LIGHTGRAY;
                         GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(buttonColor));
                         if (GuiButton((Rectangle){280.0f, yPos, 300.0f, 30.0f}, elementInfo.c_str())) {
@@ -180,12 +188,12 @@ void SceneEditor::drawSceneMode() {
             }
         }
         EndScissorMode();
-        DrawRectangleLines(280, 220, 640, 370, RED);
+        DrawRectangleLines(280, 250, 640, 340, RED); // Adjusted for new text box
 
-        float sceneMaxScroll = currentSceneIndex >= 0 ? scenes[currentSceneIndex].elements.size() * 40.0f - 370.0f : 0;
+        float sceneMaxScroll = currentSceneIndex >= 0 ? scenes[currentSceneIndex].elements.size() * 40.0f - 340.0f : 0;
         if (sceneMaxScroll > 0) {
-            float scrollBarHeight = 370.0f * (370.0f / (scenes[currentSceneIndex].elements.size() * 40.0f));
-            float scrollBarY = 220.0f + (sceneElementScrollOffset / sceneMaxScroll) * (370.0f - scrollBarHeight);
+            float scrollBarHeight = 340.0f * (340.0f / (scenes[currentSceneIndex].elements.size() * 40.0f));
+            float scrollBarY = 250.0f + (sceneElementScrollOffset / sceneMaxScroll) * (340.0f - scrollBarHeight);
             DrawRectangle(900, scrollBarY, 10, scrollBarHeight, DARKGRAY);
         }
 
@@ -195,6 +203,7 @@ void SceneEditor::drawSceneMode() {
             startTimeBuffer[0] = '\0';
             endTimeBuffer[0] = '\0';
             renderLevelBuffer[0] = '\0';
+            positionIndexBuffer[0] = '\0'; // Added for positionIndex
             poseBuffer[0] = '\0';
             isEditing = true;
             focusedTextBox = -1;
@@ -211,6 +220,7 @@ void SceneEditor::drawSceneMode() {
                 startTimeBuffer[0] = '\0';
                 endTimeBuffer[0] = '\0';
                 renderLevelBuffer[0] = '\0';
+                positionIndexBuffer[0] = '\0'; // Added for positionIndex
                 poseBuffer[0] = '\0';
             }
             TraceLog(LOG_INFO, "Sorted SceneElements");
@@ -238,8 +248,9 @@ void SceneEditor::drawSceneMode() {
             GuiComboBox((Rectangle){340.0f, 70.0f, 200.0f, 20.0f}, elementNames.c_str(), &selectedElement);
             if (prevSelectedElement != selectedElement) {
                 TraceLog(LOG_INFO, "Element dropdown changed to %d (prev=%d)", selectedElement, prevSelectedElement);
-                // Reset pose when element changes
+                // Reset pose and positionIndex when element changes
                 poseBuffer[0] = '\0';
+                positionIndexBuffer[0] = '\0'; // Added for positionIndex
             }
 
             // Pose selection for CharacterElement
@@ -263,8 +274,8 @@ void SceneEditor::drawSceneMode() {
                 selectedPoseIndex = 0;
                 poseBuffer[0] = '\0';
             }
-            GuiLabel((Rectangle){230.0f, 190.0f, 100.0f, 20.0f}, "Pose:");
-            GuiComboBox((Rectangle){340.0f, 190.0f, 200.0f, 20.0f}, poseNames.c_str(), &selectedPoseIndex);
+            GuiLabel((Rectangle){230.0f, 220.0f, 100.0f, 20.0f}, "Pose:"); // Adjusted Y position
+            GuiComboBox((Rectangle){340.0f, 220.0f, 200.0f, 20.0f}, poseNames.c_str(), &selectedPoseIndex);
 
             GuiLabel((Rectangle){230.0f, 100.0f, 100.0f, 20.0f}, "Start Time (s):");
             GuiTextBox((Rectangle){340.0f, 100.0f, 100.0f, 20.0f}, startTimeBuffer, 32, focusedTextBox == 7);
@@ -272,6 +283,10 @@ void SceneEditor::drawSceneMode() {
             GuiTextBox((Rectangle){340.0f, 130.0f, 100.0f, 20.0f}, endTimeBuffer, 32, focusedTextBox == 8);
             GuiLabel((Rectangle){230.0f, 160.0f, 100.0f, 20.0f}, "Render Level:");
             GuiTextBox((Rectangle){340.0f, 160.0f, 100.0f, 20.0f}, renderLevelBuffer, 32, focusedTextBox == 9);
+            if (selectedElement < elements.size() && elements[selectedElement].type == ElementType::CHARACTER) {
+                GuiLabel((Rectangle){230.0f, 190.0f, 100.0f, 20.0f}, "Position Index:");
+                GuiTextBox((Rectangle){340.0f, 190.0f, 100.0f, 20.0f}, positionIndexBuffer, 32, focusedTextBox == 10);
+            }
 
             if (!elements.empty() && GuiButton((Rectangle){850.0f, 90.0f, 100.0f, 20.0f}, currentSceneElementIndex == -1 ? "Add" : "Save")) {
                 saveSceneElement(selectedElement, selectedPoseIndex);
@@ -295,6 +310,7 @@ void SceneEditor::loadSceneToUI() {
         startTimeBuffer[0] = '\0';
         endTimeBuffer[0] = '\0';
         renderLevelBuffer[0] = '\0';
+        positionIndexBuffer[0] = '\0'; // Added for positionIndex
         poseBuffer[0] = '\0';
         currentSceneElementIndex = -1;
         prevSceneElementIndex = -1;
@@ -309,6 +325,7 @@ void SceneEditor::loadSceneToUI() {
         startTimeBuffer[0] = '\0';
         endTimeBuffer[0] = '\0';
         renderLevelBuffer[0] = '\0';
+        positionIndexBuffer[0] = '\0'; // Added for positionIndex
         poseBuffer[0] = '\0';
         currentSceneElementIndex = -1;
         prevSceneElementIndex = -1;
@@ -323,6 +340,7 @@ void SceneEditor::loadSceneElementToUI() {
         startTimeBuffer[0] = '\0';
         endTimeBuffer[0] = '\0';
         renderLevelBuffer[0] = '\0';
+        positionIndexBuffer[0] = '\0'; // Added for positionIndex
         poseBuffer[0] = '\0';
         return;
     }
@@ -331,10 +349,11 @@ void SceneEditor::loadSceneElementToUI() {
     snprintf(startTimeBuffer, sizeof(startTimeBuffer), "%.1f", sceneElement.startTime);
     snprintf(endTimeBuffer, sizeof(endTimeBuffer), "%.1f", sceneElement.endTime);
     snprintf(renderLevelBuffer, sizeof(renderLevelBuffer), "%d", sceneElement.renderlevel);
+    snprintf(positionIndexBuffer, sizeof(positionIndexBuffer), "%d", sceneElement.positionIndex); // Added for positionIndex
     strncpy(poseBuffer, sceneElement.selectedPose.c_str(), sizeof(poseBuffer));
-    TraceLog(LOG_INFO, "Loaded SceneElement %d: ElementIndex=%zu, Start=%.1f, End=%.1f, RenderLevel=%d, Pose=%s",
+    TraceLog(LOG_INFO, "Loaded SceneElement %d: ElementIndex=%zu, Start=%.1f, End=%.1f, RenderLevel=%d, PositionIndex=%d, Pose=%s",
              currentSceneElementIndex, sceneElement.elementIndex, sceneElement.startTime, sceneElement.endTime,
-             sceneElement.renderlevel, sceneElement.selectedPose.c_str());
+             sceneElement.renderlevel, sceneElement.positionIndex, sceneElement.selectedPose.c_str());
 }
 
 void SceneEditor::saveSceneElement(size_t selectedElementIndex, int selectedPoseIndex) {
@@ -350,10 +369,16 @@ void SceneEditor::saveSceneElement(size_t selectedElementIndex, int selectedPose
         sceneElement.startTime = std::stof(startTimeBuffer);
         sceneElement.endTime = std::stof(endTimeBuffer);
         sceneElement.renderlevel = std::stoi(renderLevelBuffer);
+        if (elements[selectedElementIndex].type == ElementType::CHARACTER) {
+            sceneElement.positionIndex = std::stoi(positionIndexBuffer); // Added for positionIndex
+        } else {
+            sceneElement.positionIndex = 0; // Default for non-character elements
+        }
     } catch (...) {
         sceneElement.startTime = 0.0f;
         sceneElement.endTime = 1.0f;
         sceneElement.renderlevel = 0;
+        sceneElement.positionIndex = 0; // Added for positionIndex
     }
 
     if (sceneElement.endTime <= sceneElement.startTime) {
@@ -369,6 +394,7 @@ void SceneEditor::saveSceneElement(size_t selectedElementIndex, int selectedPose
         }
     } else {
         sceneElement.selectedPose = "";
+        sceneElement.positionIndex = 0; // Ensure non-character elements have positionIndex 0
     }
 
     if (currentSceneIndex == -1) {
@@ -389,9 +415,9 @@ void SceneEditor::saveSceneElement(size_t selectedElementIndex, int selectedPose
         }
         scenes[currentSceneIndex].name = sceneNameBuffer;
     }
-    TraceLog(LOG_INFO, "Saved SceneElement: Index=%d, ElementIndex=%zu, Start=%.1f, End=%.1f, RenderLevel=%d, Pose=%s",
+    TraceLog(LOG_INFO, "Saved SceneElement: Index=%d, ElementIndex=%zu, Start=%.1f, End=%.1f, RenderLevel=%d, PositionIndex=%d, Pose=%s",
              currentSceneElementIndex, sceneElement.elementIndex, sceneElement.startTime, sceneElement.endTime,
-             sceneElement.renderlevel, sceneElement.selectedPose.c_str());
+             sceneElement.renderlevel, sceneElement.positionIndex, sceneElement.selectedPose.c_str());
     loadSceneElementToUI();
 }
 
@@ -401,8 +427,17 @@ void SceneEditor::sortSceneElements() {
     std::sort(scenes[currentSceneIndex].elements.begin(),
               scenes[currentSceneIndex].elements.end(),
               [this](const SceneElement& a, const SceneElement& b) {
+                  size_t aIndex = a.elementIndex < elements.size() ? a.elementIndex : 0;
+                  size_t bIndex = b.elementIndex < elements.size() ? b.elementIndex : 0;
+                  bool aIsCharacter = aIndex < elements.size() && elements[aIndex].type == ElementType::CHARACTER;
+                  bool bIsCharacter = bIndex < elements.size() && elements[bIndex].type == ElementType::CHARACTER;
+
                   if (a.startTime != b.startTime) return a.startTime < b.startTime;
-                  if (a.renderlevel != b.renderlevel) return a.renderlevel < b.renderlevel;
+                  if (aIsCharacter && bIsCharacter) {
+                      if (a.positionIndex != b.positionIndex) return a.positionIndex < b.positionIndex;
+                  } else {
+                      if (a.renderlevel != b.renderlevel) return a.renderlevel < b.renderlevel;
+                  }
                   return a.endTime < b.endTime;
               });
     TraceLog(LOG_INFO, "Sorted SceneElements for Scene %d", currentSceneIndex);
@@ -447,6 +482,7 @@ void SceneEditor::exportToJson() {
                 j_scene_element["start_time"] = sceneElement.startTime;
                 j_scene_element["end_time"] = sceneElement.endTime;
                 j_scene_element["render_level"] = sceneElement.renderlevel;
+                j_scene_element["position_index"] = sceneElement.positionIndex; // Added for positionIndex
                 j_scene_element["selected_pose"] = sceneElement.selectedPose;
                 j_scene_elements.push_back(j_scene_element);
             }

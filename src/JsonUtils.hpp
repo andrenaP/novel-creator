@@ -48,6 +48,7 @@ namespace JsonUtils
             {
                 auto& character = std::get<CharacterElement>(element.data);
                 j["data"]["name"] = character.name;
+                j["data"]["positionIndex"] = character.positionIndex; // Write positionIndex
                 j["data"]["images"] = json::array();
                 for (const auto& [pose, path] : character.images)
                 {
@@ -90,6 +91,7 @@ namespace JsonUtils
                 {
                     CharacterElement character;
                     character.name = j["data"].value("name", "");
+                    character.positionIndex = j["data"].value("positionIndex", 0); // Read positionIndex, default to 0
                     if (j["data"].contains("images"))
                     {
                         for (const auto& img : j["data"]["images"])
