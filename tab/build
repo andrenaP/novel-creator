@@ -1,0 +1,13 @@
+CXX       = "g++ -c"
+
+DIR_BUILD = "./build"
+DIR_SRC   = "./tab"
+
+
+CXX $(DIR_SRC)/main.cpp -o $(DIR_BUILD)/main.o
+
+CXX $(DIR_SRC)/main.cpp -o $(DIR_BUILD)/main.o
+CXX $(DIR_SRC)/main.cpp -o $(DIR_BUILD)/main.o
+CXX $(DIR_SRC)/main.cpp -o $(DIR_BUILD)/main.o
+CXX $(DIR_SRC)/main.cpp -o $(DIR_BUILD)/main.o
+

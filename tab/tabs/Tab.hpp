@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 
+#include "BasicUI.hpp"
 
 class Tab 
 {
@@ -13,7 +14,7 @@ private:
     Rectangle bounds;
     Rectangle closeButton;
     bool isActive;
-
+    BasicUI linkedEditor;
 
 public:
     Tab(const std::string& tabName, 
@@ -27,9 +28,8 @@ public:
         closeButton = {x + width - 20, y + 5, 15, 15};
     }
 
-    void draw(Rectangle pageCanvas) 
+    void drawPageName(Rectangle pageCanvas)
     {
-        // Разделить на drawPage и drawContent. Позже займусь
         // Draw tab background with rounded corners
         Color bgColor = isActive ? WHITE : LIGHTGRAY;
         DrawRectangleRounded(bounds, 0.3f, 10, bgColor);
@@ -48,27 +48,34 @@ public:
         {
             // DrawRectangleRec(closeButton, RED);
             DrawRectangleRounded(closeButton, 0.05f, 20, bgColor);
-            DrawText("x", closeButton.x + 4, closeButton.y + 2, 12, WHITE);
+            DrawText("x", closeButton.x + 4, closeButton.y + 2, 12, BLACK);
         }
 
         DrawRectangleRoundedLines(pageCanvas, 0.05f, 20, DARKGRAY);
-
         // Draw outline
         // DrawRectangleRoundedLines(bounds, 0.3f, 10, DARKGRAY);
     }
+
+    void drawContent()
+    {
+        // this->linkedEditor.draw();
+
+        DrawRectangleRounded({10, 10, 50, 50}, 0.05f, 20, RED);
+    }
+
 
     bool checkClick(Vector2 mousePos) 
     {
         return CheckCollisionPointRec(mousePos, bounds);
     }
-
     bool checkCloseClick(Vector2 mousePos) 
     {
         return CheckCollisionPointRec(mousePos, closeButton);
     }
+    
+    Rectangle getBounds() const { return bounds; }
 
     void setActive(bool active) { isActive = active; }
-    Rectangle getBounds() const { return bounds; }
     void setPosition(float x, float y) 
     { 
         bounds.x = x; 
