@@ -58,6 +58,7 @@ public:
 class NodeManager : BasicUI
 {
 public:
+    // NodeManager() {} //TODO ЗАГЛУШКА, СДЕЛАЙ С НЕЙ ЧТО-ТО
     NodeManager(std::vector<Scene>& scenes);
 
     void update();

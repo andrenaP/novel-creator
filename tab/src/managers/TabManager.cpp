@@ -76,23 +76,32 @@ void TabManager::handleClick(Vector2 mousePos)
         if (selectedEditor != Editors::NONE) 
         {
             std::string tabName;
-            // BasicUI* ui;
+            void* ui;
+
+            // TEMP
+            std::vector<Scene>   sc {};
+            std::vector<Element> el {};
+
             switch (selectedEditor) 
             {
                 case Editors::ELEMENT: 
                     tabName = "Element Editor"; 
+                    ui = new ElementEditor();
                     break;
                 case Editors::NODE: 
                     tabName = "Node Editor"; 
+                    ui = new NodeManager(sc);
                     break;
                 case Editors::SCENE: 
                     tabName = "Scene Editor"; 
+                    ui = new SceneEditor(el, sc);
                     break;
                 default: 
                     tabName = "New Tab"; 
                     break;
             }
-            addContentTab(tabName, nullptr, selectedEditor); // Pass nullptr UI for now
+            // addContentTab(tabName, nullptr, selectedEditor); // Pass nullptr UI for now
+            addContentTab(tabName, (BasicUI*)ui, selectedEditor);
         }
         return;
     }

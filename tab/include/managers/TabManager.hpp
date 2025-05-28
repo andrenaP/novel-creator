@@ -15,7 +15,13 @@
 
 #include "enums/Editors.hpp"
 
-class TabManager {
+#include "editors/ElementEditor.hpp"
+#include "editors/NodeManager.hpp"
+#include "editors/SceneEditor.hpp"
+
+
+class TabManager 
+{
 private:
     std::vector<std::unique_ptr<BasicTab>> tabs;
     int selectedTabIndex;
