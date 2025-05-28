@@ -1,5 +1,5 @@
-#include "SceneEditor.hpp"
-#include "FileUtils.hpp"
+#include "editors/SceneEditor.hpp"
+#include "utils/FileUtils.hpp"
 #include <algorithm>
 #include <fstream>
 

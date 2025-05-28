@@ -2,7 +2,7 @@
 #define TYPES_HPP
 
 #include "raylib.h"
-#include "json.hpp"
+#include "libs/json.hpp"
 
 #include "ui/BasicUI.hpp"
 

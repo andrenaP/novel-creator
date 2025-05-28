@@ -1,4 +1,4 @@
-#include "NodeManager.hpp"
+#include "editors/NodeManager.hpp"
 
 NodeManager::NodeManager(std::vector<Scene>& scenes) :
     scenes(scenes),

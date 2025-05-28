@@ -1,7 +1,7 @@
 // #include <raylib.h>
 #define RAYGUI_IMPLEMENTATION
-#include "ElementEditor.hpp"
-#include "FileUtils.hpp"
+#include "editors/ElementEditor.hpp"
+#include "utils/FileUtils.hpp"
 #include <fstream>
 
 ElementEditor::ElementEditor() {

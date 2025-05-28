@@ -12,7 +12,7 @@ public:
     ~BasicUI() {}
 
     virtual void draw()   {}
-    virtual void draw(Rectangle drawArea)   {}
+    virtual void draw(Rectangle& drawArea)   {}
     virtual void update() {}
 };
 

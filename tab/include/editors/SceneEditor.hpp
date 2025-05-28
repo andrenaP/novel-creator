@@ -5,7 +5,7 @@
 #include "raygui.h"
 
 #include "Types.hpp"
-#include "BasicUI.hpp"
+#include "ui/BasicUI.hpp"
 
 #include <vector>
 #include <string>

@@ -4,10 +4,10 @@
 #include <vector>
 #include <memory>
 
-#include "BasicTab.hpp"
-#include "HomeTab.hpp"
-#include "AddTab.hpp"
-#include "ContentTab.hpp"
+#include "tabs/BasicTab.hpp"
+#include "tabs/HomeTab.hpp"
+#include "tabs/AddTab.hpp"
+#include "tabs/ContentTab.hpp"
 
 class TabManager {
 private:

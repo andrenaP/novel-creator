@@ -2,7 +2,7 @@
 #define CONTENT_TAB_HPP
 
 #include "BasicTab.hpp"
-#include "BasicUI.hpp"
+#include "ui/BasicUI.hpp"
 
 class ContentTab : public BasicTab {
 private:

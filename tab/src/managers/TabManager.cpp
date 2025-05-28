@@ -1,4 +1,4 @@
-#include "TabManager.hpp"
+#include "managers/TabManager.hpp"
 
 TabManager::TabManager(Vector2 pos, float width, float height)
     : position(pos), tabWidth(120), tabHeight(30), selectedTabIndex(0) {
