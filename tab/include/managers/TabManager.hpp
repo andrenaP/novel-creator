@@ -4,10 +4,16 @@
 #include <vector>
 #include <memory>
 
+#include "raylib.h"
+
 #include "tabs/BasicTab.hpp"
 #include "tabs/HomeTab.hpp"
 #include "tabs/AddTab.hpp"
 #include "tabs/ContentTab.hpp"
+
+#include "tabs/ContextMenu.hpp"
+
+#include "enums/Editors.hpp"
 
 class TabManager {
 private:
@@ -18,6 +24,7 @@ private:
     Vector2 position;
     Rectangle tabField;
     Rectangle contentField;
+    ContextMenu contextMenu;
 
     void repositionTabs();
 
@@ -25,7 +32,7 @@ public:
     TabManager(Vector2 pos, float width, float height);
     void draw();
     void handleClick(Vector2 mousePos);
-    void addContentTab(const std::string& name, BasicUI* ui);
+    void addContentTab(const std::string& name, BasicUI* ui, Editors editorType);
 };
 
 #endif // TAB_MANAGER_HPP

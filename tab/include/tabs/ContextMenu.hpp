@@ -3,8 +3,10 @@
 
 #include <string>
 #include <vector>
+
 #include "raylib.h"
-#include "Editors.hpp"
+
+#include "enums/Editors.hpp"
 
 
 class ContextMenu 

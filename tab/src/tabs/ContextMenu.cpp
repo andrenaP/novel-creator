@@ -1,4 +1,4 @@
-#include "ContextMenu.hpp"
+#include "tabs/ContextMenu.hpp"
 #include <raylib.h>
 
 ContextMenu::ContextMenu(
@@ -57,7 +57,6 @@ void ContextMenu::draw()
         DrawRectangleLinesEx(optionRect, 1, DARKGRAY);
     }
 }
-
 void ContextMenu::show() 
 {
     isVisible = true;
