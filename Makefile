@@ -17,7 +17,7 @@ SRC := $(wildcard $(DIR_SRC)/**/*.cpp) $(wildcard $(DIR_SRC)/*.cpp)
 OBJ := $(patsubst $(DIR_SRC)/%.cpp, $(DIR_BUILD)/%.o, $(SRC))
 
 # Целевой исполняемый файл
-TARGET := $(DIR_BUILD)/my_app.exe
+TARGET := $(DIR_BUILD)/a.exe
 
 # Главная цель
 all: $(TARGET)
