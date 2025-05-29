@@ -17,14 +17,24 @@ SRC := $(wildcard $(DIR_SRC)/**/*.cpp) $(wildcard $(DIR_SRC)/*.cpp)
 OBJ := $(patsubst $(DIR_SRC)/%.cpp, $(DIR_BUILD)/%.o, $(SRC))
 
 # Целевой исполняемый файл
-TARGET := $(DIR_BUILD)/my_app.exe
+
+# Detect platform
+ifeq ($(OS),Windows_NT)
+    # Windows settings
+    TARGET := $(DIR_BUILD)/my_app.exe
+    LIBS = -lraylib -lgdi32 -lwinmm
+else
+    # Linux/Unix settings
+    TARGET := $(DIR_BUILD)/my_app.out
+    LIBS = -lraylib
+endif
 
 # Главная цель
 all: $(TARGET)
 
 # Сборка .exe из object-файлов
 $(TARGET): $(OBJ)
-	$(CXX) $(OBJ) -o $@ -L$(RAY_LIB) -lraylib -lgdi32 -lwinmm
+	$(CXX) $(OBJ) -o $@ -L$(RAY_LIB) $(LIBS)
 
 # Компиляция .cpp → .o
 $(DIR_BUILD)/%.o: $(DIR_SRC)/%.cpp
