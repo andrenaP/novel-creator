@@ -5,7 +5,52 @@
 #include "JsonUtils.hpp"
 #include "raylib.h"
 
-enum class Mode { ELEMENT, SCENE, NODE, RENDER };
+enum class Mode { ELEMENT, SCENE, NODE, RENDER, IMPORT_EXPORT };
+
+class ImportExportManager {
+private:
+    std::vector<Element>& elements;
+    std::vector<Scene>& scenes;
+    std::vector<Node>& nodes;
+    Render& renderer; // Reference to renderer to update current node after import
+
+public:
+    ImportExportManager(std::vector<Element>& elements, std::vector<Scene>& scenes, std::vector<Node>& nodes, Render& renderer)
+        : elements(elements), scenes(scenes), nodes(nodes), renderer(renderer) {}
+
+    void update() {
+        // No update logic needed for now, but can be extended for dynamic UI
+    }
+
+    void draw() {
+        // Draw import/export buttons
+        if (GuiButton({400, 250, 100, 30}, "Export Project")) {
+            try {
+                JsonUtils::exportToFile(elements, scenes, nodes, "project.json");
+                TraceLog(LOG_INFO, "Exported project to project.json");
+            } catch (const std::exception& e) {
+                TraceLog(LOG_ERROR, "Export failed: %s", e.what());
+            }
+        }
+        if (GuiButton({400, 290, 100, 30}, "Import Project")) {
+            try {
+                JsonUtils::importFromFile(elements, scenes, nodes, "project.json");
+                // Reset renderer to start node after import
+                for (size_t i = 0; i < nodes.size(); ++i) {
+                    if (nodes[i].isStartNode) {
+                        renderer.setCurrentNodeIndex(i);
+                        TraceLog(LOG_INFO, "Set render node to start node %d after import", i);
+                        break;
+                    }
+                }
+                TraceLog(LOG_INFO, "Imported project from project.json");
+            } catch (const std::exception& e) {
+                TraceLog(LOG_ERROR, "Import failed: %s", e.what());
+            }
+        }
+        DrawText("Import/Export Mode\nPress TAB to switch modes", 350, 350, 10, DARKGRAY);
+    }
+};
 
 int main() {
     InitWindow(1000, 600, "Novel Scene Creator");
@@ -16,6 +61,12 @@ int main() {
     SceneEditor sceneEditor(elementEditor.getElements(), elementEditor.getScenes());
     NodeManager nodeManager(sceneEditor.getScenes());
     Render renderer(elementEditor.getElements(), elementEditor.getScenes(), nodeManager.getNodes());
+    ImportExportManager importExportManager(
+        elementEditor.getElements(),
+        elementEditor.getScenes(),
+        nodeManager.getNodes(),
+        renderer
+    );
 
     // Set initial node to the start node
     for (size_t i = 0; i < nodeManager.getNodes().size(); ++i) {
@@ -43,10 +94,14 @@ int main() {
                 break;
             case Mode::NODE:
                 currentMode = Mode::RENDER;
-                renderer.resetSlide(); // Reset slide when entering RENDER mode
+                renderer.resetSlide();
                 TraceLog(LOG_INFO, "Switched to Render mode");
                 break;
             case Mode::RENDER:
+                currentMode = Mode::IMPORT_EXPORT;
+                TraceLog(LOG_INFO, "Switched to Import/Export mode");
+                break;
+            case Mode::IMPORT_EXPORT:
                 currentMode = Mode::ELEMENT;
                 TraceLog(LOG_INFO, "Switched to Element mode");
                 break;
@@ -69,7 +124,9 @@ int main() {
             break;
         case Mode::RENDER:
             renderer.update(GetTime(), renderer.getCurrentSlide());
-            // Handle slide navigation via buttons (handled in draw for GUI)
+            break;
+        case Mode::IMPORT_EXPORT:
+            importExportManager.update();
             break;
         default:
             break;
@@ -91,65 +148,20 @@ int main() {
             break;
         case Mode::RENDER:
             renderer.draw();
-            DrawText(TextFormat("Slide: %d", renderer.getCurrentSlide()), 10, 30, 10, DARKGRAY);
-            // Draw slide navigation buttons
-            if (GuiButton({10, 50, 100, 30}, "Next Slide") && renderer.canGoNext()) {
-                renderer.nextSlide();
-            }
-            if (GuiButton({120, 50, 100, 30}, "Previous Slide") && renderer.canGoPrev()) {
-                renderer.prevSlide();
-            }
-            if (GuiButton({230, 50, 100, 30}, "Reset Slide")) {
-                renderer.resetSlide();
-            }
+            break;
+        case Mode::IMPORT_EXPORT:
+            importExportManager.draw();
             break;
         default:
             break;
         }
 
-        // Draw import/export buttons and mode switch text
-        if (GuiButton({800, 460, 100, 30}, "Export Project")) {
-            try {
-                JsonUtils::exportToFile(
-                    elementEditor.getElements(),
-                    elementEditor.getScenes(),
-                    nodeManager.getNodes(),
-                    "project.json"
-                );
-                TraceLog(LOG_INFO, "Exported project to project.json");
-            } catch (const std::exception& e) {
-                TraceLog(LOG_ERROR, "Export failed: %s", e.what());
-            }
-        }
-        if (GuiButton({800, 500, 100, 30}, "Import Project")) {
-            try {
-                JsonUtils::importFromFile(
-                    elementEditor.getElements(),
-                    elementEditor.getScenes(),
-                    nodeManager.getNodes(),
-                    "project.json"
-                );
-                // Reset renderer to start node after import
-                for (size_t i = 0; i < nodeManager.getNodes().size(); ++i) {
-                    if (nodeManager.getNodes()[i].isStartNode) {
-                        renderer.setCurrentNodeIndex(i);
-                        TraceLog(LOG_INFO, "Set render node to start node %d after import", i);
-                        break;
-                    }
-                }
-                TraceLog(LOG_INFO, "Imported project from project.json");
-            } catch (const std::exception& e) {
-                TraceLog(LOG_ERROR, "Import failed: %s", e.what());
-            }
-        }
-        DrawText("Press TAB to switch between\nElement, Scene, Node, and Render modes", 800, 540, 10, DARKGRAY);
         EndDrawing();
     }
 
     CloseWindow();
     return 0;
 }
-
 
 // #include <raylib.h>
 // #include "TabManager.hpp"

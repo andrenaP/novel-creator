@@ -48,9 +48,9 @@ void ElementEditor::update() {
 }
 
 void ElementEditor::draw() {
-    DrawText("Mode: Element", 10, 10, 10, DARKGRAY);
-    DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
-    DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
+    // DrawText("Mode: Element", 10, 10, 10, DARKGRAY);
+    // DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
+    // DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
     drawElementMode();
 }
 

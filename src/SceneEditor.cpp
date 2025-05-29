@@ -93,12 +93,12 @@ void SceneEditor::clearBuffers() {
 }
 
 void SceneEditor::draw() {
-    DrawText("Mode: Scene", 10, 10, 10, DARKGRAY);
-    DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
-    DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
-    DrawText(TextFormat("Current Scene Index: %d", currentSceneIndex), 10, 40, 10, DARKGRAY);
-    DrawText(TextFormat("Current Scene Element Index: %d", currentSceneElementIndex), 10, 50, 10, DARKGRAY);
-    DrawText(TextFormat("Previous Scene Element Index: %d", prevSceneElementIndex), 10, 60, 10, DARKGRAY);
+    // DrawText("Mode: Scene", 10, 10, 10, DARKGRAY);
+    // DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
+    // DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
+    // DrawText(TextFormat("Current Scene Index: %d", currentSceneIndex), 10, 40, 10, DARKGRAY);
+    // DrawText(TextFormat("Current Scene Element Index: %d", currentSceneElementIndex), 10, 50, 10, DARKGRAY);
+    // DrawText(TextFormat("Previous Scene Element Index: %d", prevSceneElementIndex), 10, 60, 10, DARKGRAY);
     drawSceneMode();
 }
 
