@@ -1,5 +1,32 @@
 #include "managers/TabManager.hpp"
-#include <raylib.h>
+
+TabManager::TabManager(Vector2 pos): 
+    position(pos),
+    tabWidth(TAB_WIDTH),
+    tabHeight(TAB_HEIGHT),
+    selectedTabIndex(0),
+    contextMenu({{pos.x, pos.y + tabHeight}, 150, 30}) 
+{
+    this->updateResolution();
+
+    this->tabs.emplace_back(
+        std::make_unique<HomeTab>(
+            this->position.x, 
+            this->position.y, 
+            tabWidth, 
+            tabHeight
+        )
+    );
+    this->tabs.emplace_back(
+        std::make_unique<AddTab>(
+            this->position.x + tabWidth, 
+            this->position.y, 
+            tabHeight
+        )
+    );
+    repositionTabs();
+}
+
 
 TabManager::TabManager(
     Vector2 pos, 
@@ -7,23 +34,25 @@ TabManager::TabManager(
     float height
 ): 
     position(pos),
-    tabWidth(120),
-    tabHeight(30),
+    tabWidth(TAB_WIDTH),
+    tabHeight(TAB_HEIGHT),
     selectedTabIndex(0),
     contextMenu({{pos.x, pos.y + tabHeight}, 150, 30}) 
 {
-    this->tabField = {
-        this->position.x, 
-        this->position.y, 
-        width, 
-        tabHeight
-    };
-    this->contentField = {
-        this->position.x, 
-        this->position.y + tabHeight, 
-        width, 
-        height - tabHeight
-    };
+    // this->tabField = {
+    //     this->position.x, 
+    //     this->position.y, 
+    //     width, 
+    //     tabHeight
+    // };
+    // this->contentField = {
+    //     this->position.x, 
+    //     this->position.y + tabHeight, 
+    //     width, 
+    //     height - tabHeight
+    // };
+    
+    this->updateResolution();
 
     this->tabs.emplace_back(
         std::make_unique<HomeTab>(
@@ -53,8 +82,42 @@ void TabManager::repositionTabs()
     }
 }
 
-void TabManager::draw() 
+void TabManager::updateResolution()
 {
+    Vector2 screenSize = this->getScreenResolution();
+
+    this->border = position.x;
+
+    this->tabField = {
+        this->border,
+        this->border,
+        screenSize.x - this->border * 2,
+        this->tabHeight
+    };
+
+    this->contentField = {
+        this->border,
+        this->tabField.height + this->border,
+        screenSize.x - this->border * 2,
+        screenSize.y - this->border * 2 - this->tabHeight
+    };
+}
+
+Vector2 TabManager::getScreenResolution()
+{
+    return {
+        (float)GetScreenWidth(),
+        (float)GetScreenHeight()
+    };
+}
+
+
+
+void TabManager::draw() 
+{   
+    DrawRectangleLinesEx(this->tabField, 2, GREEN);
+    DrawRectangleLinesEx(this->contentField, 2, GREEN);
+    
     for (size_t i = 0; i < tabs.size(); ++i) 
     {
         tabs[i]->setActive(i == selectedTabIndex);
@@ -86,7 +149,8 @@ void TabManager::handleClick(Vector2 mousePos)
             {
                 case Editors::ELEMENT: 
                     tabName = "Element Editor"; 
-                    ui = new ElementEditor();
+                    // ui = new ElementEditor();
+                    ui = new ElementEditor(this->contentField);
                     break;
                 case Editors::NODE: 
                     tabName = "Node Editor"; 
@@ -101,7 +165,7 @@ void TabManager::handleClick(Vector2 mousePos)
                     break;
             }
             // addContentTab(tabName, nullptr, selectedEditor); // Pass nullptr UI for now
-            addContentTab(tabName, (BasicUI*)ui, selectedEditor);
+            addContentTab(tabName, (BasicUI*)ui);
         }
         return;
     }
@@ -123,7 +187,8 @@ void TabManager::handleClick(Vector2 mousePos)
     }
 }
 
-void TabManager::addContentTab(const std::string& name, BasicUI* ui, Editors editorType) 
+// void TabManager::addContentTab(const std::string& name, BasicUI* ui, Editors editorType) 
+void TabManager::addContentTab(const std::string& name, BasicUI* ui) 
 {
     tabs.insert(
         tabs.end() - 1,

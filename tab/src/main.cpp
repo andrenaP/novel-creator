@@ -2,14 +2,14 @@
 #include "managers/TabManager.hpp"
 
 int main() {
-    const int screenWidth = 800;
-    const int screenHeight = 600;
+    const int screenWidth = 850;
+    const int screenHeight = 650;
 
     InitWindow(screenWidth, screenHeight, "Browser-like Scene Editor");
     SetTargetFPS(60);
 
     // Создаём TabManager, управляющий вкладками
-    TabManager tabManager({10.0f, 10.0f}, screenWidth - 20.0f, screenHeight - 20.0f);
+    TabManager tabManager({10.0f, 10.0f});
 
     while (!WindowShouldClose()) 
     {

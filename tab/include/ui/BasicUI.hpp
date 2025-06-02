@@ -3,16 +3,24 @@
 
 #include "raylib.h"
 
+#include "ui/PositionResolver.hpp"
+
 class BasicUI
 {
-private:
-    /* data */
+protected:
+    PositionResolver _resolver;
+
 public:
-    BasicUI()  {}
+    BasicUI():
+        _resolver()
+    {}
+    BasicUI(Rectangle rect):
+        _resolver(rect)
+    {}
     ~BasicUI() {}
 
     virtual void draw()   {}
-    virtual void draw(Rectangle& drawArea)   {}
+    virtual void drawClipped(Rectangle contentField)   {}
     virtual void update() {}
 };
 

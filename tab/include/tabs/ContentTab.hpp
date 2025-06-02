@@ -32,7 +32,7 @@ public:
     void drawContent(Rectangle contentField) override 
     {
         if (ui) 
-            ui->draw(contentField);
+            ui->drawClipped(contentField);
     }
 };
 
