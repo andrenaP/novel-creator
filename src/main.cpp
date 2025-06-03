@@ -48,7 +48,35 @@ public:
                 TraceLog(LOG_ERROR, "Import failed: %s", e.what());
             }
         }
-        DrawText("Import/Export Mode\nPress TAB to switch modes", 350, 350, 10, DARKGRAY);
+
+        if (GuiButton({400, 330, 100, 30}, "export To Folder")) {
+            try {
+                JsonUtils::exportToFolder(elements, scenes, nodes, "path");
+                TraceLog(LOG_INFO, "Exported project to path");
+            } catch (const std::exception& e) {
+                TraceLog(LOG_ERROR, "Export failed: %s", e.what());
+            }
+        }
+
+        if (GuiButton({400, 370, 100, 30}, "Import To Folder")) {
+            try {
+                JsonUtils::importFromFolder(elements, scenes, nodes, "path");
+                // Reset renderer to start node after import
+                for (size_t i = 0; i < nodes.size(); ++i) {
+                    if (nodes[i].isStartNode) {
+                        renderer.setCurrentNodeIndex(i);
+                        TraceLog(LOG_INFO, "Set render node to start node %d after import", i);
+                        break;
+                    }
+                }
+                TraceLog(LOG_INFO, "Imported project from project.json");
+            } catch (const std::exception& e) {
+                TraceLog(LOG_ERROR, "Import failed: %s", e.what());
+            }
+        }
+
+
+        DrawText("Import/Export Mode\nPress TAB to switch modes", 350, 400, 10, DARKGRAY);
     }
 };
 

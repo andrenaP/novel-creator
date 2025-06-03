@@ -19,7 +19,7 @@ int main() {
 
     // Load project data
     try {
-        JsonUtils::importFromFile(elements, scenes, nodes, "project.json");
+        JsonUtils::importFromFolder(elements, scenes, nodes, ".");
         TraceLog(LOG_INFO, "Imported project from project.json");
 
         // Set renderer to the start node
