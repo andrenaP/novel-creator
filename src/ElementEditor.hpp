@@ -37,6 +37,7 @@ private:
     int focusedTextBox;
     bool isEditing;
     float elementScrollOffset;
+    float imageScrollOffset;
 
     void updateElementMode();
     void clearBuffers();

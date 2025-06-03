@@ -19,6 +19,7 @@ ElementEditor::ElementEditor() {
     imageNameBuffer[0] = '\0';
     imagePathBuffer[0] = '\0';
     bgPathBuffer[0] = '\0';
+    imageScrollOffset = 0.0f;
 }
 
 ElementEditor::~ElementEditor() {
@@ -48,9 +49,6 @@ void ElementEditor::update() {
 }
 
 void ElementEditor::draw() {
-    // DrawText("Mode: Element", 10, 10, 10, DARKGRAY);
-    // DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
-    // DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
     drawElementMode();
 }
 
@@ -62,10 +60,21 @@ void ElementEditor::updateElementMode() {
 
     float mouseWheelMove = GetMouseWheelMove();
     if (mouseWheelMove != 0) {
-        elementScrollOffset -= mouseWheelMove * 20.0f;
-        float maxScroll = elements.size() * 40.0f - 500.0f;
-        if (maxScroll < 0) maxScroll = 0;
-        elementScrollOffset = elementScrollOffset < 0 ? 0 : elementScrollOffset > maxScroll ? maxScroll : elementScrollOffset;
+        if (CheckCollisionPointRec(GetMousePosition(), (Rectangle){220.0f, 150.0f, 520.0f, 360.0f})) {
+            // Scroll for character images
+            imageScrollOffset -= mouseWheelMove * 20.0f;
+            float maxScroll = (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER
+                ? std::get<CharacterElement>(elements[currentElementIndex].data).images.size() * 60.0f - 360.0f
+                : 0.0f);
+            if (maxScroll < 0) maxScroll = 0;
+            imageScrollOffset = imageScrollOffset < 0 ? 0 : imageScrollOffset > maxScroll ? maxScroll : imageScrollOffset;
+        } else {
+            // Scroll for elements list
+            elementScrollOffset -= mouseWheelMove * 20.0f;
+            float maxScroll = elements.size() * 40.0f - 500.0f;
+            if (maxScroll < 0) maxScroll = 0;
+            elementScrollOffset = elementScrollOffset < 0 ? 0 : elementScrollOffset > maxScroll ? maxScroll : elementScrollOffset;
+        }
     }
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -80,9 +89,9 @@ void ElementEditor::updateElementMode() {
             newFocusedTextBox = 2;
         } else if (elementTypeIndex == 2 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 100.0f, 200.0f, 20.0f})) {
             newFocusedTextBox = 3;
-        } else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, (Rectangle){410.0f, 220.0f, 180.0f, 20.0f})) {
+        } else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, (Rectangle){510.0f, 220.0f, 180.0f, 20.0f})) {
             newFocusedTextBox = 4;
-        } else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, (Rectangle){410.0f, 250.0f, 180.0f, 20.0f})) {
+        } else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, (Rectangle){510.0f, 250.0f, 180.0f, 20.0f})) {
             newFocusedTextBox = 5;
         }
 
@@ -107,6 +116,7 @@ void ElementEditor::clearBuffers() {
     showAddImage = false;
     showEditImage = false;
     editImageIndex = -1;
+    imageScrollOffset = 0.0f;
 }
 
 void ElementEditor::loadElementToUI() {
@@ -293,30 +303,41 @@ void ElementEditor::drawElementMode() {
 
             if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) {
                 auto& character = std::get<CharacterElement>(elements[currentElementIndex].data);
+                BeginScissorMode(220, 150, 520, 360);
                 for (size_t i = 0; i < character.images.size(); ++i) {
-                    std::string imageInfo = character.images[i].first + ": " + character.images[i].second;
-                    GuiLabel((Rectangle){340.0f, 150.0f + static_cast<float>(i) * 60.0f, 300.0f, 20.0f}, imageInfo.c_str());
-                    if (i < character.textures.size() && character.textures[i].id > 0) {
-                        float scale = 50.0f / std::max(character.textures[i].width, character.textures[i].height);
-                        DrawTextureEx(character.textures[i],
-                                      {340.0f, 150.0f + static_cast<float>(i) * 60.0f},
-                                      0, scale, WHITE);
-                        DrawText(TextFormat("Texture ID: %u", character.textures[i].id),
-                                 340, 170 + static_cast<int>(i) * 60, 10, DARKGRAY);
+                    float yPos = 150.0f + static_cast<float>(i) * 60.0f - imageScrollOffset;
+                    if (yPos > 110.0f && yPos < 510.0f) {
+                        std::string imageInfo = character.images[i].first + ": " + character.images[i].second;
+                        GuiLabel((Rectangle){340.0f, yPos, 300.0f, 20.0f}, imageInfo.c_str());
+                        if (i < character.textures.size() && character.textures[i].id > 0) {
+                            float scale = 50.0f / std::max(character.textures[i].width, character.textures[i].height);
+                            DrawTextureEx(character.textures[i],
+                                          {340.0f, yPos + 20.0f},
+                                          0, scale, WHITE);
+                            DrawText(TextFormat("Texture ID: %u", character.textures[i].id),
+                                     340, static_cast<int>(yPos) + 40, 10, DARKGRAY);
+                        }
+                        if (GuiButton((Rectangle){650.0f, yPos, 80.0f, 20.0f}, "Edit")) {
+                            showEditImage = true;
+                            editImageIndex = i;
+                            strncpy(imageNameBuffer, character.images[i].first.c_str(), sizeof(imageNameBuffer));
+                            strncpy(imagePathBuffer, character.images[i].second.c_str(), sizeof(imagePathBuffer));
+                            TraceLog(LOG_INFO, "Editing image %d for Character", i);
+                        }
                     }
-                    if (GuiButton((Rectangle){650.0f, 150.0f + static_cast<float>(i) * 60.0f, 80.0f, 20.0f}, "Edit")) {
-                        showEditImage = true;
-                        editImageIndex = i;
-                        strncpy(imageNameBuffer, character.images[i].first.c_str(), sizeof(imageNameBuffer));
-                        strncpy(imagePathBuffer, character.images[i].second.c_str(), sizeof(imagePathBuffer));
-                        TraceLog(LOG_INFO, "Editing image %d for Character", i);
-                    }
+                }
+                EndScissorMode();
+
+                // Draw scrollbar for character images
+                float maxImageScroll = character.images.size() * 60.0f - 360.0f;
+                if (maxImageScroll > 0) {
+                    float scrollBarHeight = 360.0f * (360.0f / (character.images.size() * 60.0f));
+                    float scrollBarY = 150.0f + (imageScrollOffset / maxImageScroll) * (360.0f - scrollBarHeight);
+                    DrawRectangle(720, scrollBarY, 10, scrollBarHeight, DARKGRAY);
                 }
             }
 
-            float imageButtonY = 150.0f + (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER
-                ? static_cast<float>(std::get<CharacterElement>(elements[currentElementIndex].data).images.size()) * 60.0f
-                : 0.0f);
+            float imageButtonY = 510.0f;
             if (GuiButton((Rectangle){340.0f, imageButtonY, 100.0f, 20.0f}, "Add Image")) {
                 showAddImage = true;
                 imageNameBuffer[0] = '\0';
@@ -326,19 +347,20 @@ void ElementEditor::drawElementMode() {
 
             if (showAddImage || showEditImage) {
                 const char* title = showAddImage ? "Add Image" : "Edit Image";
-                GuiGroupBox((Rectangle){300.0f, 200.0f, 300.0f, 200.0f}, title);
-                GuiLabel((Rectangle){310.0f, 220.0f, 100.0f, 20.0f}, "Image Name:");
-                GuiTextBox((Rectangle){410.0f, 220.0f, 180.0f, 20.0f}, imageNameBuffer, 256, focusedTextBox == 4);
-                GuiLabel((Rectangle){310.0f, 250.0f, 100.0f, 20.0f}, "Image Path:");
-                GuiTextBox((Rectangle){410.0f, 250.0f, 180.0f, 20.0f}, imagePathBuffer, 256, focusedTextBox == 5);
-                if (GuiButton((Rectangle){310.0f, 280.0f, 90.0f, 20.0f}, "Select File")) {
+                // Draw solid background for popup
+                DrawRectangle(400, 200, 300, 200, DARKGRAY);
+                GuiGroupBox((Rectangle){400.0f, 200.0f, 300.0f, 200.0f}, title);
+                GuiLabel((Rectangle){410.0f, 220.0f, 100.0f, 20.0f}, "Image Name:");
+                GuiTextBox((Rectangle){510.0f, 220.0f, 180.0f, 20.0f}, imageNameBuffer, 256, focusedTextBox == 4);
+                GuiLabel((Rectangle){410.0f, 250.0f, 100.0f, 20.0f}, "Image Path:");
+                GuiTextBox((Rectangle){510.0f, 250.0f, 180.0f, 20.0f}, imagePathBuffer, 256, focusedTextBox == 5);
+                if (GuiButton((Rectangle){410.0f, 280.0f, 90.0f, 20.0f}, "Select File")) {
                     std::string file = OpenFileDialog();
                     if (!file.empty()) {
                         strncpy(imagePathBuffer, file.c_str(), sizeof(imagePathBuffer));
                         TraceLog(LOG_INFO, "Selected image file: %s", imagePathBuffer);
                         if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) {
                             auto& character = std::get<CharacterElement>(elements[currentElementIndex].data);
-                            // Update immediately for "Select File" in edit mode
                             if (showEditImage && editImageIndex >= 0 && editImageIndex < (int)character.images.size()) {
                                 if (character.textures[editImageIndex].id > 0) {
                                     UnloadTexture(character.textures[editImageIndex]);
@@ -357,7 +379,7 @@ void ElementEditor::drawElementMode() {
                         }
                     }
                 }
-                if (GuiButton((Rectangle){310.0f, 310.0f, 90.0f, 20.0f}, showAddImage ? "Add" : "Save")) {
+                if (GuiButton((Rectangle){410.0f, 310.0f, 90.0f, 20.0f}, showAddImage ? "Add" : "Save")) {
                     if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) {
                         auto& character = std::get<CharacterElement>(elements[currentElementIndex].data);
                         if (showAddImage && IsValidImagePath(imagePathBuffer)) {
@@ -391,7 +413,7 @@ void ElementEditor::drawElementMode() {
                     imageNameBuffer[0] = '\0';
                     imagePathBuffer[0] = '\0';
                 }
-                if (GuiButton((Rectangle){410.0f, 310.0f, 90.0f, 20.0f}, "Cancel")) {
+                if (GuiButton((Rectangle){510.0f, 310.0f, 90.0f, 20.0f}, "Cancel")) {
                     showAddImage = false;
                     showEditImage = false;
                     imageNameBuffer[0] = '\0';
@@ -408,9 +430,9 @@ void ElementEditor::drawElementMode() {
                     TraceLog(LOG_INFO, "Selected background file: %s", bgPathBuffer);
                     if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::BACKGROUND) {
                         auto& bg = std::get<BackgroundElement>(elements[currentElementIndex].data);
-                        bg.imagePath = file; // Update imagePath
+                        bg.imagePath = file;
                         if (bg.texture.id > 0) {
-                            UnloadTexture(bg.texture); // Unload old texture
+                            UnloadTexture(bg.texture);
                         }
                         Image img = LoadImage(file.c_str());
                         bg.texture = LoadTextureFromImage(img);
