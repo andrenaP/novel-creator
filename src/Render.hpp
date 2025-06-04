@@ -6,6 +6,7 @@
 #include "Types.hpp"
 // #include "raylib.h"
 // #include "raygui.h"
+#include <raylib.h>
 #include <vector>
 #include <string>
 
@@ -14,7 +15,7 @@ class Render {
 public:
     Render(std::vector<Element>& elements, std::vector<Scene>& scenes, std::vector<Node>& nodes);
     void update(float currentTime, int currentSlide);
-    void draw();
+    void draw(Font customFont);
     void setCurrentNodeIndex(int index);
     int getCurrentNodeIndex() const;
     void nextSlide(); // New: Advance to next slide
@@ -34,8 +35,8 @@ private:
     float buttonSpacing;
     bool showButtons;
 
-    void drawScene(const Scene& scene, float currentTime, int currentSlide);
-    void drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide, int characterCount, int currentCharacterIndex, float spacing, float margin);
+    void drawScene(const Scene& scene, float currentTime, int currentSlide, Font customFont);
+    void drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide, int characterCount, int currentCharacterIndex, float spacing, float margin, Font customFont);
 };
 
 #endif // RENDER_HPP

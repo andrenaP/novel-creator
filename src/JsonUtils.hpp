@@ -277,6 +277,26 @@ namespace JsonUtils
             TraceLog(LOG_WARNING, "Failed to copy RENDERNAME: %s", e.what());
         }
 
+        try
+        {
+            fs::path exeDir = fs::current_path();
+            fs::path srcFontDir = exeDir / "font";
+            fs::path dstFontDir = fs::path(folderPath) / "font";
+            if (fs::exists(srcFontDir))
+            {
+                fs::create_directories(dstFontDir); // Ensure destination directory exists
+                fs::copy(srcFontDir, dstFontDir, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "Font directory does not exist: %s", srcFontDir.string().c_str());
+            }
+        }
+        catch (const fs::filesystem_error& e)
+        {
+            TraceLog(LOG_WARNING, "Failed to copy font directory: %s", e.what());
+        }
+
 
         // Collect all image paths to copy
         std::vector<std::string> imagePaths;

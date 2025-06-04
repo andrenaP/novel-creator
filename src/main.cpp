@@ -5,6 +5,9 @@
 #include "JsonUtils.hpp"
 #include "raylib.h"
 
+// #define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
 enum class Mode { ELEMENT, SCENE, NODE, RENDER, IMPORT_EXPORT };
 
 class ImportExportManager {
@@ -12,17 +15,17 @@ private:
     std::vector<Element>& elements;
     std::vector<Scene>& scenes;
     std::vector<Node>& nodes;
-    Render& renderer; // Reference to renderer to update current node after import
+    Render& renderer;
 
 public:
     ImportExportManager(std::vector<Element>& elements, std::vector<Scene>& scenes, std::vector<Node>& nodes, Render& renderer)
         : elements(elements), scenes(scenes), nodes(nodes), renderer(renderer) {}
 
     void update() {
-        // No update logic needed for now, but can be extended for dynamic UI
+        // No update logic needed for now
     }
 
-    void draw() {
+    void draw(Font customFont) {
         // Draw import/export buttons
         if (GuiButton({400, 250, 100, 30}, "Export Project")) {
             try {
@@ -69,7 +72,7 @@ public:
                         break;
                     }
                 }
-                TraceLog(LOG_INFO, "Imported project from project.json");
+                TraceLog(LOG_INFO, "Imported project from path");
             } catch (const std::exception& e) {
                 TraceLog(LOG_ERROR, "Import failed: %s", e.what());
             }
@@ -83,6 +86,36 @@ public:
 int main() {
     InitWindow(1000, 600, "Novel Scene Creator");
     SetTargetFPS(60);
+
+    // Define Cyrillic Unicode range (U+0400 to U+04FF)
+    int codepoints[512]; // Increased size to include basic Latin + Cyrillic
+    int count = 0;
+    // Include basic Latin (U+0020 to U+007F) for standard characters
+    for (int i = 0x0020; i <= 0x007F; ++i) {
+        codepoints[count++] = i;
+    }
+    // Include Cyrillic (U+0400 to U+04FF)
+    for (int i = 0x0400; i <= 0x04FF; ++i) {
+        codepoints[count++] = i;
+    }
+
+    // Load Noto Sans font
+    Font customFont = LoadFontEx("font/noto-sans.regular.ttf", 16, codepoints, count);
+    // Alternative: If using variable font, comment the above and uncomment below
+    // Font customFont = LoadFontEx("font/NotoSans-VariableFont_wdth,wght.ttf", 16, codepoints, count);
+    if (customFont.baseSize == 0 || customFont.glyphCount == 0) {
+        TraceLog(LOG_ERROR, "Failed to load font: font/NotoSans-Regular.ttf");
+        customFont = GetFontDefault(); // Fallback to default font
+        TraceLog(LOG_WARNING, "Using default font as fallback");
+    } else {
+        TraceLog(LOG_INFO, "Loaded font with %d glyphs", customFont.glyphCount);
+    }
+
+    // Set the custom font globally for raygui
+    GuiSetFont(customFont);
+
+    // Set global text size for raygui controls
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 16);
 
     Mode currentMode = Mode::ELEMENT;
     ElementEditor elementEditor;
@@ -105,13 +138,9 @@ int main() {
         }
     }
 
-    while (!WindowShouldClose())
-    {
-        // Handle mode switching
-        if (IsKeyPressed(KEY_TAB))
-        {
-            switch (currentMode)
-            {
+    while (!WindowShouldClose()) {
+        if (IsKeyPressed(KEY_TAB)) {
+            switch (currentMode) {
             case Mode::ELEMENT:
                 currentMode = Mode::SCENE;
                 TraceLog(LOG_INFO, "Switched to Scene mode");
@@ -133,14 +162,10 @@ int main() {
                 currentMode = Mode::ELEMENT;
                 TraceLog(LOG_INFO, "Switched to Element mode");
                 break;
-            default:
-                break;
             }
         }
 
-        // Update
-        switch (currentMode)
-        {
+        switch (currentMode) {
         case Mode::ELEMENT:
             elementEditor.update();
             break;
@@ -156,15 +181,11 @@ int main() {
         case Mode::IMPORT_EXPORT:
             importExportManager.update();
             break;
-        default:
-            break;
         }
 
-        // Draw
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        switch (currentMode)
-        {
+        switch (currentMode) {
         case Mode::ELEMENT:
             elementEditor.draw();
             break;
@@ -175,61 +196,16 @@ int main() {
             nodeManager.draw();
             break;
         case Mode::RENDER:
-            renderer.draw();
+            renderer.draw(customFont);
             break;
         case Mode::IMPORT_EXPORT:
-            importExportManager.draw();
-            break;
-        default:
+            importExportManager.draw(customFont);
             break;
         }
-
         EndDrawing();
     }
 
+    UnloadFont(customFont);
     CloseWindow();
     return 0;
 }
-
-// #include <raylib.h>
-// #include "TabManager.hpp"
-
-// int main() {
-//     const int screenWidth = 800;
-//     const int screenHeight = 600;
-
-//     InitWindow(screenWidth, screenHeight, "Browser-like Scene Editor");
-//     SetTargetFPS(60);
-
-//     // Create tab manager
-//     TabManager tabManager(10.0f, 10.0f, 150.0f, 30.0f);
-
-//     // Add initial tab
-//     tabManager.addTab("Home");
-
-//     while (!WindowShouldClose()) {
-//         // Update
-//         tabManager.update();
-
-//         // Draw
-//         BeginDrawing();
-//         ClearBackground(RAYWHITE);
-
-//         tabManager.draw();
-
-//         // Draw content area
-
-
-//         // Draw content based on selected tab
-//         int selectedTab = tabManager.getSelectedTabIndex();
-//         if (selectedTab >= 0) {
-//             DrawText(("Content for Tab " + std::to_string(selectedTab + 1)).c_str(),
-//                     100, 100, 20, BLACK);
-//         }
-
-//         EndDrawing();
-//     }
-
-//     CloseWindow();
-//     return 0;
-// }

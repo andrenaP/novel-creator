@@ -61,7 +61,7 @@ void Render::update(float currentTime, int currentSlide) {
     }
 }
 
-void Render::draw() {
+void Render::draw(Font customFont) {
     if (currentNodeIndex < 0 || currentNodeIndex >= (int)nodes.size()) {
         DrawText("No node selected", 10, 10, 20, RED);
         TraceLog(LOG_ERROR, "Cannot draw: invalid node index %d", currentNodeIndex);
@@ -70,7 +70,7 @@ void Render::draw() {
 
     const Node& currentNode = nodes[currentNodeIndex];
     if (currentNode.sceneIndex >= 0 && currentNode.sceneIndex < (int)scenes.size()) {
-        drawScene(scenes[currentNode.sceneIndex], GetTime(), currentSlide);
+        drawScene(scenes[currentNode.sceneIndex], GetTime(), currentSlide, customFont);
     } else {
         TraceLog(LOG_WARNING, "Invalid scene index %d for node %d", currentNode.sceneIndex, currentNodeIndex);
     }
@@ -151,7 +151,7 @@ void Render::draw() {
     }
 }
 
-void Render::drawScene(const Scene& scene, float currentTime, int currentSlide) {
+void Render::drawScene(const Scene& scene, float currentTime, int currentSlide,Font customFont) {
     // Collect all elements to render
     std::vector<std::pair<const SceneElement*, const Element*>> renderElements;
     for (const auto& sceneElement : scene.elements) {
@@ -204,24 +204,25 @@ void Render::drawScene(const Scene& scene, float currentTime, int currentSlide) 
               [](const auto& a, const auto& b) { return a.first->renderlevel < b.first->renderlevel; });
 
     for (const auto& [sceneElement, element] : nonCharacterElements) {
-        drawElement(*sceneElement, *element, currentTime, currentSlide, characterCount, 0, spacing, startX);
+        drawElement(*sceneElement, *element, currentTime, currentSlide, characterCount, 0, spacing, startX,customFont);
     }
 
     // Render characters in positionIndex order
     for (size_t i = 0; i < characterElements.size(); ++i) {
-        drawElement(*characterElements[i].first, *characterElements[i].second, currentTime, currentSlide, characterCount, i, spacing, startX);
+        drawElement(*characterElements[i].first, *characterElements[i].second, currentTime, currentSlide, characterCount, i, spacing, startX,customFont);
     }
 }
 
-void Render::drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide, int characterCount, int currentCharacterIndex, float spacing, float startX) {
+void Render::drawElement(const SceneElement& sceneElement, const Element& element, float currentTime, int currentSlide, int characterCount, int currentCharacterIndex, float spacing, float startX, Font customFont) {
     if (element.type == ElementType::TEXT) {
         const auto& text = std::get<TextElement>(element.data);
         int textWidth = MeasureText(text.content.c_str(), 20);
-        DrawText(text.content.c_str(),
-                 (GetScreenWidth() - textWidth) / 2,
-                 GetScreenHeight() - 50,
-                 20,
-                 BLACK);
+        DrawTextEx(customFont, text.content.c_str(), (Vector2){int(GetScreenWidth() - textWidth) / 2,  GetScreenHeight() - 50}, 20, 2,  BLACK);
+        // DrawText(text.content.c_str(),
+        //          (GetScreenWidth() - textWidth) / 2,
+        //          GetScreenHeight() - 50,
+        //          20,
+        //          BLACK);
     } else if (element.type == ElementType::BACKGROUND) {
         const auto& bg = std::get<BackgroundElement>(element.data);
         if (bg.texture.id > 0) {
