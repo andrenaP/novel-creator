@@ -74,7 +74,7 @@ public:
             SINGLE_POINT,
             MULTI_POINT
         };
-
+        Font customFont;
 private:
     bool isMouseOverNode(size_t index);
     bool isMouseOverNodeInput(size_t index);

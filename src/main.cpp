@@ -128,7 +128,7 @@ int main() {
         nodeManager.getNodes(),
         renderer
     );
-
+    nodeManager.customFont=customFont;
     // Set initial node to the start node
     for (size_t i = 0; i < nodeManager.getNodes().size(); ++i) {
         if (nodeManager.getNodes()[i].isStartNode) {

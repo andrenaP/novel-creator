@@ -1,4 +1,5 @@
 #include "NodeManager.hpp"
+#include <raylib.h>
 
 NodeManager::NodeManager(std::vector<Scene>& scenes) :
     scenes(scenes),
@@ -162,7 +163,9 @@ void NodeManager::draw()
                 Vector2 start = getNodeOutputPos(i, j);
                 Vector2 end = getNodeInputPos(conn.toNodeIndex, connectionRenderMode == ConnectionRenderMode::MULTI_POINT ? inputSlotIndex : 0);
                 DrawLineBezier(start, end, 2.0f, DARKGRAY);
-                DrawText(conn.choiceText.c_str(), (start.x + end.x) / 2, (start.y + end.y) / 2 - 10, 10, BLACK);
+                // DrawTextEx(conn.choiceText.c_str(), (start.x + end.x) / 2, (start.y + end.y) / 2 - 10, 10, BLACK);
+                DrawTextEx(customFont, conn.choiceText.c_str(), (Vector2){(start.x + end.x) / 2,  (start.y + end.y) / 2 -10}, 20, 1,  BLACK);
+
             } else {
                 TraceLog(LOG_WARNING, "Invalid toNodeIndex %zu in connection %zu for node %zu", conn.toNodeIndex, j, i);
             }
