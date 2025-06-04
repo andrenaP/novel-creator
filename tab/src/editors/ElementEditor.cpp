@@ -137,27 +137,27 @@ void ElementEditor::updateElementMode()
         Vector2 mousePos = GetMousePosition();
         int newFocusedTextBox = -1;
 
-        if (CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 30.0f, 200.0f, 20.0f})) 
+        if (CheckCollisionPointRec(mousePos, Rectangle{340.0f, 30.0f, 200.0f, 20.0f})) 
         {
             newFocusedTextBox = 0;
         } 
-        else if (elementTypeIndex == 0 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 100.0f, 400.0f, 100.0f})) 
+        else if (elementTypeIndex == 0 && CheckCollisionPointRec(mousePos, Rectangle{340.0f, 100.0f, 400.0f, 100.0f})) 
         {
             newFocusedTextBox = 1;
         } 
-        else if (elementTypeIndex == 1 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 100.0f, 200.0f, 20.0f})) 
+        else if (elementTypeIndex == 1 && CheckCollisionPointRec(mousePos, Rectangle{340.0f, 100.0f, 200.0f, 20.0f})) 
         {
             newFocusedTextBox = 2;
         } 
-        else if (elementTypeIndex == 2 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 100.0f, 200.0f, 20.0f})) 
+        else if (elementTypeIndex == 2 && CheckCollisionPointRec(mousePos, Rectangle{340.0f, 100.0f, 200.0f, 20.0f})) 
         {
             newFocusedTextBox = 3;
         } 
-        else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, (Rectangle){410.0f, 220.0f, 180.0f, 20.0f})) 
+        else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, Rectangle{410.0f, 220.0f, 180.0f, 20.0f})) 
         {
             newFocusedTextBox = 4;
         } 
-        else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, (Rectangle){410.0f, 250.0f, 180.0f, 20.0f})) 
+        else if ((showAddImage || showEditImage) && CheckCollisionPointRec(mousePos, Rectangle{410.0f, 250.0f, 180.0f, 20.0f})) 
         {
             newFocusedTextBox = 5;
         }
@@ -167,7 +167,7 @@ void ElementEditor::updateElementMode()
             focusedTextBox = newFocusedTextBox;
             TraceLog(LOG_INFO, "Focused TextBox set to %d", focusedTextBox);
         } 
-        else if (!CheckCollisionPointRec(mousePos, (Rectangle){220.0f, 10.0f, 770.0f, 580.0f})) 
+        else if (!CheckCollisionPointRec(mousePos, Rectangle{220.0f, 10.0f, 770.0f, 580.0f})) 
         {
             focusedTextBox = -1;
             TraceLog(LOG_INFO, "Focused TextBox cleared");
@@ -622,14 +622,14 @@ void ElementEditor::drawClippedElementMode()
 
 void ElementEditor::drawElementMode() 
 {
-    GuiGroupBox((Rectangle){10.0f, 10.0f, 200.0f, 580.0f}, "Elements");
+    GuiGroupBox(Rectangle{10.0f, 10.0f, 200.0f, 580.0f}, "Elements");
     BeginScissorMode(10, 50, 200, 500);
     for (size_t i = 0; i < elements.size(); ++i) 
     {
         float yPos = 50.0f + static_cast<float>(i) * 40.0f - elementScrollOffset;
         if (yPos > -40.0f && yPos < 550.0f) 
         {
-            if (GuiButton((Rectangle){20.0f, yPos, 180.0f, 30.0f}, elements[i].name.c_str())) 
+            if (GuiButton(Rectangle{20.0f, yPos, 180.0f, 30.0f}, elements[i].name.c_str())) 
             {
                 currentElementIndex = i;
                 isEditing = true;
@@ -648,7 +648,7 @@ void ElementEditor::drawElementMode()
         DrawRectangle(190, scrollBarY, 10, scrollBarHeight, DARKGRAY);
     }
 
-    if (GuiButton((Rectangle){20.0f, 550.0f, 180.0f, 30.0f}, "New Element")) 
+    if (GuiButton(Rectangle{20.0f, 550.0f, 180.0f, 30.0f}, "New Element")) 
     {
         currentElementIndex = -1;
         isEditing = true;
@@ -657,21 +657,21 @@ void ElementEditor::drawElementMode()
         TraceLog(LOG_INFO, "Creating new Element");
     }
 
-    if (GuiButton((Rectangle){20.0f, 510.0f, 180.0f, 30.0f}, "Export to JSON")) 
+    if (GuiButton(Rectangle{20.0f, 510.0f, 180.0f, 30.0f}, "Export to JSON")) 
     {
         exportToJson();
     }
 
-    GuiGroupBox((Rectangle){220.0f, 10.0f, 770.0f, 580.0f}, "Element Editor");
+    GuiGroupBox(Rectangle{220.0f, 10.0f, 770.0f, 580.0f}, "Element Editor");
 
     if (currentElementIndex == -1 || currentElementIndex < (int)elements.size()) 
     {
-        GuiLabel((Rectangle){230.0f, 30.0f, 100.0f, 20.0f}, "Element Name:");
-        GuiTextBox((Rectangle){340.0f, 30.0f, 200.0f, 20.0f}, nameBuffer, 256, focusedTextBox == 0);
+        GuiLabel(Rectangle{230.0f, 30.0f, 100.0f, 20.0f}, "Element Name:");
+        GuiTextBox(Rectangle{340.0f, 30.0f, 200.0f, 20.0f}, nameBuffer, 256, focusedTextBox == 0);
 
-        GuiLabel((Rectangle){230.0f, 60.0f, 100.0f, 20.0f}, "Element Type:");
+        GuiLabel(Rectangle{230.0f, 60.0f, 100.0f, 20.0f}, "Element Type:");
         int newTypeIndex = elementTypeIndex;
-        GuiComboBox((Rectangle){340.0f, 60.0f, 200.0f, 20.0f}, "Text;Character;Background", &newTypeIndex);
+        GuiComboBox(Rectangle{340.0f, 60.0f, 200.0f, 20.0f}, "Text;Character;Background", &newTypeIndex);
         if (newTypeIndex != elementTypeIndex) 
         {
             elementTypeIndex = newTypeIndex;
@@ -690,13 +690,13 @@ void ElementEditor::drawElementMode()
 
         if (elementTypeIndex == 0) 
         {
-            GuiLabel((Rectangle){230.0f, 100.0f, 100.0f, 20.0f}, "Content:");
-            GuiTextBox((Rectangle){340.0f, 100.0f, 400.0f, 100.0f}, textBuffer, 1024, focusedTextBox == 1);
+            GuiLabel(Rectangle{230.0f, 100.0f, 100.0f, 20.0f}, "Content:");
+            GuiTextBox(Rectangle{340.0f, 100.0f, 400.0f, 100.0f}, textBuffer, 1024, focusedTextBox == 1);
         } 
         else if (elementTypeIndex == 1) 
         {
-            GuiLabel((Rectangle){230.0f, 100.0f, 100.0f, 20.0f}, "Character Name:");
-            GuiTextBox((Rectangle){340.0f, 100.0f, 200.0f, 20.0f}, charNameBuffer, 256, focusedTextBox == 2);
+            GuiLabel(Rectangle{230.0f, 100.0f, 100.0f, 20.0f}, "Character Name:");
+            GuiTextBox(Rectangle{340.0f, 100.0f, 200.0f, 20.0f}, charNameBuffer, 256, focusedTextBox == 2);
 
             if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) 
             {
@@ -704,7 +704,7 @@ void ElementEditor::drawElementMode()
                 for (size_t i = 0; i < character.images.size(); ++i) 
                 {
                     std::string imageInfo = character.images[i].first + ": " + character.images[i].second;
-                    GuiLabel((Rectangle){340.0f, 150.0f + static_cast<float>(i) * 60.0f, 300.0f, 20.0f}, imageInfo.c_str());
+                    GuiLabel(Rectangle{340.0f, 150.0f + static_cast<float>(i) * 60.0f, 300.0f, 20.0f}, imageInfo.c_str());
                     if (i < character.textures.size() && character.textures[i].id > 0) 
                     {
                         float scale = 50.0f / std::max(character.textures[i].width, character.textures[i].height);
@@ -720,7 +720,7 @@ void ElementEditor::drawElementMode()
                             10, DARKGRAY
                         );
                     }
-                    if (GuiButton((Rectangle){650.0f, 150.0f + static_cast<float>(i) * 60.0f, 80.0f, 20.0f}, "Edit")) 
+                    if (GuiButton(Rectangle{650.0f, 150.0f + static_cast<float>(i) * 60.0f, 80.0f, 20.0f}, "Edit")) 
                     {
                         showEditImage = true;
                         editImageIndex = i;
@@ -734,7 +734,7 @@ void ElementEditor::drawElementMode()
             float imageButtonY = 150.0f + (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER
                 ? static_cast<float>(std::get<CharacterElement>(elements[currentElementIndex].data).images.size()) * 60.0f
                 : 0.0f);
-            if (GuiButton((Rectangle){340.0f, imageButtonY, 100.0f, 20.0f}, "Add Image")) 
+            if (GuiButton(Rectangle{340.0f, imageButtonY, 100.0f, 20.0f}, "Add Image")) 
             {
                 showAddImage = true;
                 imageNameBuffer[0] = '\0';
@@ -745,12 +745,12 @@ void ElementEditor::drawElementMode()
             if (showAddImage || showEditImage) 
             {
                 const char* title = showAddImage ? "Add Image" : "Edit Image";
-                GuiGroupBox((Rectangle){300.0f, 200.0f, 300.0f, 200.0f}, title);
-                GuiLabel((Rectangle){310.0f, 220.0f, 100.0f, 20.0f}, "Image Name:");
-                GuiTextBox((Rectangle){410.0f, 220.0f, 180.0f, 20.0f}, imageNameBuffer, 256, focusedTextBox == 4);
-                GuiLabel((Rectangle){310.0f, 250.0f, 100.0f, 20.0f}, "Image Path:");
-                GuiTextBox((Rectangle){410.0f, 250.0f, 180.0f, 20.0f}, imagePathBuffer, 256, focusedTextBox == 5);
-                if (GuiButton((Rectangle){310.0f, 280.0f, 90.0f, 20.0f}, "Select File")) 
+                GuiGroupBox(Rectangle{300.0f, 200.0f, 300.0f, 200.0f}, title);
+                GuiLabel(Rectangle{310.0f, 220.0f, 100.0f, 20.0f}, "Image Name:");
+                GuiTextBox(Rectangle{410.0f, 220.0f, 180.0f, 20.0f}, imageNameBuffer, 256, focusedTextBox == 4);
+                GuiLabel(Rectangle{310.0f, 250.0f, 100.0f, 20.0f}, "Image Path:");
+                GuiTextBox(Rectangle{410.0f, 250.0f, 180.0f, 20.0f}, imagePathBuffer, 256, focusedTextBox == 5);
+                if (GuiButton(Rectangle{310.0f, 280.0f, 90.0f, 20.0f}, "Select File")) 
                 {
                     std::string file = OpenFileDialog();
                     if (!file.empty()) 
@@ -784,7 +784,7 @@ void ElementEditor::drawElementMode()
                         }
                     }
                 }
-                if (GuiButton((Rectangle){310.0f, 310.0f, 90.0f, 20.0f}, showAddImage ? "Add" : "Save")) 
+                if (GuiButton(Rectangle{310.0f, 310.0f, 90.0f, 20.0f}, showAddImage ? "Add" : "Save")) 
                 {
                     if (currentElementIndex >= 0 && elements[currentElementIndex].type == ElementType::CHARACTER) 
                     {
@@ -834,7 +834,7 @@ void ElementEditor::drawElementMode()
                     imageNameBuffer[0] = '\0';
                     imagePathBuffer[0] = '\0';
                 }
-                if (GuiButton((Rectangle){410.0f, 310.0f, 90.0f, 20.0f}, "Cancel")) 
+                if (GuiButton(Rectangle{410.0f, 310.0f, 90.0f, 20.0f}, "Cancel")) 
                 {
                     showAddImage = false;
                     showEditImage = false;
@@ -845,9 +845,9 @@ void ElementEditor::drawElementMode()
         } 
         else 
         {
-            GuiLabel((Rectangle){230.0f, 100.0f, 100.0f, 20.0f}, "Image Path:");
-            GuiTextBox((Rectangle){340.0f, 100.0f, 200.0f, 20.0f}, bgPathBuffer, 256, focusedTextBox == 3);
-            if (GuiButton((Rectangle){550.0f, 100.0f, 100.0f, 20.0f}, "Select File")) 
+            GuiLabel(Rectangle{230.0f, 100.0f, 100.0f, 20.0f}, "Image Path:");
+            GuiTextBox(Rectangle{340.0f, 100.0f, 200.0f, 20.0f}, bgPathBuffer, 256, focusedTextBox == 3);
+            if (GuiButton(Rectangle{550.0f, 100.0f, 100.0f, 20.0f}, "Select File")) 
             {
                 std::string file = OpenFileDialog();
                 if (!file.empty()) 
@@ -890,7 +890,7 @@ void ElementEditor::drawElementMode()
         }
 
         if (
-            GuiButton((Rectangle){340.0f, 550.0f, 100.0f, 20.0f}, 
+            GuiButton(Rectangle{340.0f, 550.0f, 100.0f, 20.0f}, 
             currentElementIndex == -1 ? "Create" : "Save")) 
         {
             saveElement();

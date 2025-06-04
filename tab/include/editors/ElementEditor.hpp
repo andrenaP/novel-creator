@@ -19,8 +19,8 @@ public:
     ~ElementEditor();
 
     void update();
+    void draw();
     void drawClipped(Rectangle contentField) override;
-    void draw() override;
     
     std::vector<Element>& getElements();
     std::vector<Scene>& getScenes();

@@ -43,12 +43,12 @@ void SceneEditor::updateSceneMode() {
 
     float mouseWheelMove = GetMouseWheelMove();
     if (mouseWheelMove != 0) {
-        if (CheckCollisionPointRec(GetMousePosition(), (Rectangle){10.0f, 50.0f, 200.0f, 500.0f})) {
+        if (CheckCollisionPointRec(GetMousePosition(), Rectangle{10.0f, 50.0f, 200.0f, 500.0f})) {
             sceneScrollOffset -= mouseWheelMove * 20.0f;
             float maxScroll = scenes.size() * 40.0f - 500.0f;
             if (maxScroll < 0) maxScroll = 0;
             sceneScrollOffset = sceneScrollOffset < 0 ? 0 : sceneScrollOffset > maxScroll ? maxScroll : sceneScrollOffset;
-        } else if (currentSceneIndex >= 0 && CheckCollisionPointRec(GetMousePosition(), (Rectangle){280.0f, 220.0f, 640.0f, 370.0f})) {
+        } else if (currentSceneIndex >= 0 && CheckCollisionPointRec(GetMousePosition(), Rectangle{280.0f, 220.0f, 640.0f, 370.0f})) {
             sceneElementScrollOffset -= mouseWheelMove * 20.0f;
             float maxScroll = scenes[currentSceneIndex].elements.size() * 40.0f - 370.0f;
             if (maxScroll < 0) maxScroll = 0;
@@ -60,23 +60,23 @@ void SceneEditor::updateSceneMode() {
         Vector2 mousePos = GetMousePosition();
         int newFocusedTextBox = -1;
 
-        if (CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 30.0f, 200.0f, 20.0f})) {
+        if (CheckCollisionPointRec(mousePos, Rectangle{340.0f, 30.0f, 200.0f, 20.0f})) {
             newFocusedTextBox = 6;
-        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 100.0f, 100.0f, 20.0f})) {
+        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, Rectangle{340.0f, 100.0f, 100.0f, 20.0f})) {
             newFocusedTextBox = 7;
-        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 130.0f, 100.0f, 20.0f})) {
+        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, Rectangle{340.0f, 130.0f, 100.0f, 20.0f})) {
             newFocusedTextBox = 8;
-        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 160.0f, 100.0f, 20.0f})) {
+        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, Rectangle{340.0f, 160.0f, 100.0f, 20.0f})) {
             newFocusedTextBox = 9;
-        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, (Rectangle){340.0f, 190.0f, 100.0f, 20.0f})) {
+        } else if (currentSceneElementIndex >= -1 && CheckCollisionPointRec(mousePos, Rectangle{340.0f, 190.0f, 100.0f, 20.0f})) {
             newFocusedTextBox = 10; // Added for positionIndex
         }
 
         if (newFocusedTextBox != -1) {
             focusedTextBox = newFocusedTextBox;
             TraceLog(LOG_INFO, "Focused TextBox set to %d", focusedTextBox);
-        } else if (!CheckCollisionPointRec(mousePos, (Rectangle){220.0f, 10.0f, 770.0f, 580.0f}) &&
-                   !CheckCollisionPointRec(mousePos, (Rectangle){280.0f, 220.0f, 640.0f, 370.0f})) {
+        } else if (!CheckCollisionPointRec(mousePos, Rectangle{220.0f, 10.0f, 770.0f, 580.0f}) &&
+                   !CheckCollisionPointRec(mousePos, Rectangle{280.0f, 220.0f, 640.0f, 370.0f})) {
             focusedTextBox = -1;
             TraceLog(LOG_INFO, "Focused TextBox cleared");
         }
@@ -93,22 +93,22 @@ void SceneEditor::clearBuffers() {
 }
 
 void SceneEditor::draw() {
-    DrawText("Mode: Scene", 10, 10, 10, DARKGRAY);
-    DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
-    DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
-    DrawText(TextFormat("Current Scene Index: %d", currentSceneIndex), 10, 40, 10, DARKGRAY);
-    DrawText(TextFormat("Current Scene Element Index: %d", currentSceneElementIndex), 10, 50, 10, DARKGRAY);
-    DrawText(TextFormat("Previous Scene Element Index: %d", prevSceneElementIndex), 10, 60, 10, DARKGRAY);
+    // DrawText("Mode: Scene", 10, 10, 10, DARKGRAY);
+    // DrawText(TextFormat("Focused TextBox: %d", focusedTextBox), 10, 20, 10, DARKGRAY);
+    // DrawText(TextFormat("Is Editing: %d", isEditing), 10, 30, 10, DARKGRAY);
+    // DrawText(TextFormat("Current Scene Index: %d", currentSceneIndex), 10, 40, 10, DARKGRAY);
+    // DrawText(TextFormat("Current Scene Element Index: %d", currentSceneElementIndex), 10, 50, 10, DARKGRAY);
+    // DrawText(TextFormat("Previous Scene Element Index: %d", prevSceneElementIndex), 10, 60, 10, DARKGRAY);
     drawSceneMode();
 }
 
 void SceneEditor::drawSceneMode() {
-    GuiGroupBox((Rectangle){10.0f, 10.0f, 200.0f, 580.0f}, "Scenes");
+    GuiGroupBox(Rectangle{10.0f, 10.0f, 200.0f, 580.0f}, "Scenes");
     BeginScissorMode(10, 50, 200, 500);
     for (size_t i = 0; i < scenes.size(); ++i) {
         float yPos = 50.0f + static_cast<float>(i) * 40.0f - sceneScrollOffset;
         if (yPos > -40.0f && yPos < 550.0f) {
-            if (GuiButton((Rectangle){20.0f, yPos, 180.0f, 30.0f}, scenes[i].name.c_str())) {
+            if (GuiButton(Rectangle{20.0f, yPos, 180.0f, 30.0f}, scenes[i].name.c_str())) {
                 currentSceneIndex = i;
                 currentSceneElementIndex = -1;
                 prevSceneElementIndex = -1;
@@ -128,7 +128,7 @@ void SceneEditor::drawSceneMode() {
         DrawRectangle(190, scrollBarY, 10, scrollBarHeight, DARKGRAY);
     }
 
-    if (GuiButton((Rectangle){20.0f, 550.0f, 180.0f, 30.0f}, "New Scene")) {
+    if (GuiButton(Rectangle{20.0f, 550.0f, 180.0f, 30.0f}, "New Scene")) {
         currentSceneIndex = -1;
         currentSceneElementIndex = -1;
         prevSceneElementIndex = -1;
@@ -143,17 +143,17 @@ void SceneEditor::drawSceneMode() {
         TraceLog(LOG_INFO, "Creating new Scene");
     }
 
-    if (GuiButton((Rectangle){20.0f, 510.0f, 180.0f, 30.0f}, "Export to JSON")) {
+    if (GuiButton(Rectangle{20.0f, 510.0f, 180.0f, 30.0f}, "Export to JSON")) {
         exportToJson();
     }
 
-    GuiGroupBox((Rectangle){220.0f, 10.0f, 770.0f, 580.0f}, "Scene Editor");
+    GuiGroupBox(Rectangle{220.0f, 10.0f, 770.0f, 580.0f}, "Scene Editor");
 
     if (currentSceneIndex == -1 || currentSceneIndex < (int)scenes.size()) {
-        GuiLabel((Rectangle){230.0f, 30.0f, 100.0f, 20.0f}, "Scene Name:");
-        GuiTextBox((Rectangle){340.0f, 30.0f, 200.0f, 20.0f}, sceneNameBuffer, 256, focusedTextBox == 6);
+        GuiLabel(Rectangle{230.0f, 30.0f, 100.0f, 20.0f}, "Scene Name:");
+        GuiTextBox(Rectangle{340.0f, 30.0f, 200.0f, 20.0f}, sceneNameBuffer, 256, focusedTextBox == 6);
 
-        GuiLabel((Rectangle){230.0f, 220.0f, 100.0f, 20.0f}, "Scene Elements:"); // Adjusted Y position
+        GuiLabel(Rectangle{230.0f, 220.0f, 100.0f, 20.0f}, "Scene Elements:"); // Adjusted Y position
         BeginScissorMode(280, 250, 640, 340); // Adjusted for new text box
         if (currentSceneIndex >= 0) {
             for (size_t i = 0; i < scenes[currentSceneIndex].elements.size(); ++i) {
@@ -175,7 +175,7 @@ void SceneEditor::drawSceneMode() {
                         elementInfo += "]";
                         Color buttonColor = (static_cast<int>(i) == currentSceneElementIndex) ? SKYBLUE : LIGHTGRAY;
                         GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(buttonColor));
-                        if (GuiButton((Rectangle){280.0f, yPos, 300.0f, 30.0f}, elementInfo.c_str())) {
+                        if (GuiButton(Rectangle{280.0f, yPos, 300.0f, 30.0f}, elementInfo.c_str())) {
                             TraceLog(LOG_INFO, "Clicked SceneElement %d (ElementIndex=%zu)", i, elemIndex);
                             currentSceneElementIndex = i;
                             isEditing = true;
@@ -197,7 +197,7 @@ void SceneEditor::drawSceneMode() {
             DrawRectangle(900, scrollBarY, 10, scrollBarHeight, DARKGRAY);
         }
 
-        if (GuiButton((Rectangle){850.0f, 30.0f, 120.0f, 20.0f}, "Add Element")) {
+        if (GuiButton(Rectangle{850.0f, 30.0f, 120.0f, 20.0f}, "Add Element")) {
             currentSceneElementIndex = -1;
             prevSceneElementIndex = -1;
             startTimeBuffer[0] = '\0';
@@ -210,7 +210,7 @@ void SceneEditor::drawSceneMode() {
             TraceLog(LOG_INFO, "Adding new SceneElement");
         }
 
-        if (currentSceneIndex >= 0 && GuiButton((Rectangle){850.0f, 60.0f, 120.0f, 20.0f}, "Sort Elements")) {
+        if (currentSceneIndex >= 0 && GuiButton(Rectangle{850.0f, 60.0f, 120.0f, 20.0f}, "Sort Elements")) {
             sortSceneElements();
             if (currentSceneElementIndex >= 0 && currentSceneElementIndex < (int)scenes[currentSceneIndex].elements.size()) {
                 loadSceneElementToUI();
@@ -245,7 +245,7 @@ void SceneEditor::drawSceneMode() {
                 prevSceneElementIndex = currentSceneElementIndex;
             }
             int prevSelectedElement = selectedElement;
-            GuiComboBox((Rectangle){340.0f, 70.0f, 200.0f, 20.0f}, elementNames.c_str(), &selectedElement);
+            GuiComboBox(Rectangle{340.0f, 70.0f, 200.0f, 20.0f}, elementNames.c_str(), &selectedElement);
             if (prevSelectedElement != selectedElement) {
                 TraceLog(LOG_INFO, "Element dropdown changed to %d (prev=%d)", selectedElement, prevSelectedElement);
                 // Reset pose and positionIndex when element changes
@@ -274,21 +274,21 @@ void SceneEditor::drawSceneMode() {
                 selectedPoseIndex = 0;
                 poseBuffer[0] = '\0';
             }
-            GuiLabel((Rectangle){230.0f, 220.0f, 100.0f, 20.0f}, "Pose:"); // Adjusted Y position
-            GuiComboBox((Rectangle){340.0f, 220.0f, 200.0f, 20.0f}, poseNames.c_str(), &selectedPoseIndex);
+            GuiLabel(Rectangle{230.0f, 220.0f, 100.0f, 20.0f}, "Pose:"); // Adjusted Y position
+            GuiComboBox(Rectangle{340.0f, 220.0f, 200.0f, 20.0f}, poseNames.c_str(), &selectedPoseIndex);
 
-            GuiLabel((Rectangle){230.0f, 100.0f, 100.0f, 20.0f}, "Start Time (s):");
-            GuiTextBox((Rectangle){340.0f, 100.0f, 100.0f, 20.0f}, startTimeBuffer, 32, focusedTextBox == 7);
-            GuiLabel((Rectangle){230.0f, 130.0f, 100.0f, 20.0f}, "End Time (s):");
-            GuiTextBox((Rectangle){340.0f, 130.0f, 100.0f, 20.0f}, endTimeBuffer, 32, focusedTextBox == 8);
-            GuiLabel((Rectangle){230.0f, 160.0f, 100.0f, 20.0f}, "Render Level:");
-            GuiTextBox((Rectangle){340.0f, 160.0f, 100.0f, 20.0f}, renderLevelBuffer, 32, focusedTextBox == 9);
+            GuiLabel(Rectangle{230.0f, 100.0f, 100.0f, 20.0f}, "Start Time (s):");
+            GuiTextBox(Rectangle{340.0f, 100.0f, 100.0f, 20.0f}, startTimeBuffer, 32, focusedTextBox == 7);
+            GuiLabel(Rectangle{230.0f, 130.0f, 100.0f, 20.0f}, "End Time (s):");
+            GuiTextBox(Rectangle{340.0f, 130.0f, 100.0f, 20.0f}, endTimeBuffer, 32, focusedTextBox == 8);
+            GuiLabel(Rectangle{230.0f, 160.0f, 100.0f, 20.0f}, "Render Level:");
+            GuiTextBox(Rectangle{340.0f, 160.0f, 100.0f, 20.0f}, renderLevelBuffer, 32, focusedTextBox == 9);
             if (selectedElement < elements.size() && elements[selectedElement].type == ElementType::CHARACTER) {
-                GuiLabel((Rectangle){230.0f, 190.0f, 100.0f, 20.0f}, "Position Index:");
-                GuiTextBox((Rectangle){340.0f, 190.0f, 100.0f, 20.0f}, positionIndexBuffer, 32, focusedTextBox == 10);
+                GuiLabel(Rectangle{230.0f, 190.0f, 100.0f, 20.0f}, "Position Index:");
+                GuiTextBox(Rectangle{340.0f, 190.0f, 100.0f, 20.0f}, positionIndexBuffer, 32, focusedTextBox == 10);
             }
 
-            if (!elements.empty() && GuiButton((Rectangle){850.0f, 90.0f, 100.0f, 20.0f}, currentSceneElementIndex == -1 ? "Add" : "Save")) {
+            if (!elements.empty() && GuiButton(Rectangle{850.0f, 90.0f, 100.0f, 20.0f}, currentSceneElementIndex == -1 ? "Add" : "Save")) {
                 saveSceneElement(selectedElement, selectedPoseIndex);
                 isEditing = false;
                 focusedTextBox = -1;
