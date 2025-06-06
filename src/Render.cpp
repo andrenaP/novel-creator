@@ -244,7 +244,7 @@ void Render::drawElement(const SceneElement& sceneElement, const Element& elemen
                 float characterWidth = character.textures[i].width * scale;
                 // Calculate posX: startX + index * (characterWidth + spacing)
                 float posX = startX + currentCharacterIndex * (characterWidth + spacing);
-                float posY = GetScreenHeight() - character.textures[i].height * scale;
+                float posY = GetScreenHeight() - character.textures[i].height * scale-60;
                 DrawTextureEx(character.textures[i],
                               {posX, posY},
                               0.0f,
